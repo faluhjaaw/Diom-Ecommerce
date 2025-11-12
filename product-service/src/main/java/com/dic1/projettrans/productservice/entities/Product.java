@@ -38,7 +38,7 @@ public class Product {
 
     // reference to vendor (seller) user id
     @Indexed
-    private String vendorId;
+    private Long vendorId;
 
     private String brand;
 

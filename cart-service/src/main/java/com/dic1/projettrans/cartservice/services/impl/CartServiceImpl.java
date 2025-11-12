@@ -5,6 +5,9 @@ import com.dic1.projettrans.cartservice.dto.CartDTO;
 import com.dic1.projettrans.cartservice.dto.CartItemDTO;
 import com.dic1.projettrans.cartservice.dto.UpdateItemQuantityDTO;
 import com.dic1.projettrans.cartservice.entities.Cart;
+import com.dic1.projettrans.cartservice.feign.CustomerServiceRestClient;
+import com.dic1.projettrans.cartservice.feign.ProductServiceRestClient;
+import com.dic1.projettrans.cartservice.model.Product;
 import com.dic1.projettrans.cartservice.repositories.CartRepository;
 import com.dic1.projettrans.cartservice.services.CartService;
 import lombok.RequiredArgsConstructor;
@@ -21,9 +24,19 @@ import java.util.stream.Collectors;
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
+    private final ProductServiceRestClient productClient;
+    private final CustomerServiceRestClient customerClient;
 
     @Override
-    public CartDTO getOrCreateCart(String userId) {
+    public CartDTO getOrCreateCart(Long userId) {
+        // Validate customer exists when accessing cart
+        try {
+            if (customerClient.findUserById(userId) == null) {
+                throw new IllegalArgumentException("Customer not found: " + userId);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Customer not found: " + userId);
+        }
         return cartRepository.findByUserId(userId)
                 .map(this::toDTO)
                 .orElseGet(() -> {
@@ -38,14 +51,36 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public Optional<CartDTO> getCart(String userId) {
+    public Optional<CartDTO> getCart(Long userId) {
         return cartRepository.findByUserId(userId).map(this::toDTO);
     }
 
     @Override
-    public CartDTO addItem(String userId, AddItemDTO dto) {
+    public CartDTO addItem(Long userId, AddItemDTO dto) {
+        // Ensure customer exists
+        try {
+            if (customerClient.findUserById(userId) == null) {
+                throw new IllegalArgumentException("Customer not found: " + userId);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Customer not found: " + userId);
+        }
+
         requirePositiveQuantity(dto.getQuantity());
+
+        // Resolve product price if not provided
+        if (dto.getUnitPrice() == null) {
+            Product product = null;
+            try {
+                product = productClient.findProductById(dto.getProductId());
+            } catch (Exception ignored) {}
+            if (product == null) {
+                throw new IllegalArgumentException("Product not found: " + dto.getProductId());
+            }
+            dto.setUnitPrice(product.getPrice());
+        }
         requirePrice(dto.getUnitPrice());
+
         Cart cart = cartRepository.findByUserId(userId).orElseGet(() -> Cart.builder()
                 .userId(userId)
                 .items(new ArrayList<>())
@@ -75,7 +110,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartDTO updateItemQuantity(String userId, UpdateItemQuantityDTO dto) {
+    public CartDTO updateItemQuantity(Long userId, UpdateItemQuantityDTO dto) {
         requirePositiveQuantity(dto.getQuantity());
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found for user: " + userId));
@@ -90,7 +125,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartDTO removeItem(String userId, String productId) {
+    public CartDTO removeItem(Long userId, String productId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found for user: " + userId));
         boolean removed = cart.getItems().removeIf(i -> i.getProductId().equals(productId));
@@ -103,7 +138,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartDTO clearCart(String userId) {
+    public CartDTO clearCart(Long userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Cart not found for user: " + userId));
         cart.setItems(new ArrayList<>());

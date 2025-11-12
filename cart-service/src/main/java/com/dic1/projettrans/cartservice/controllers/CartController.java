@@ -19,32 +19,32 @@ public class CartController {
 
     // Get or create the cart for a user
     @GetMapping("/{userId}")
-    public ResponseEntity<CartDTO> getOrCreate(@PathVariable String userId) {
+    public ResponseEntity<CartDTO> getOrCreate(@PathVariable Long userId) {
         return ResponseEntity.ok(cartService.getOrCreateCart(userId));
     }
 
     // Add item to cart
     @PostMapping("/{userId}/items")
-    public ResponseEntity<CartDTO> addItem(@PathVariable String userId, @RequestBody AddItemDTO dto) {
+    public ResponseEntity<CartDTO> addItem(@PathVariable Long userId, @RequestBody AddItemDTO dto) {
         CartDTO updated = cartService.addItem(userId, dto);
         return ResponseEntity.created(URI.create("/api/carts/" + userId)).body(updated);
     }
 
     // Update item quantity
     @PutMapping("/{userId}/items")
-    public ResponseEntity<CartDTO> updateItemQuantity(@PathVariable String userId, @RequestBody UpdateItemQuantityDTO dto) {
+    public ResponseEntity<CartDTO> updateItemQuantity(@PathVariable Long userId, @RequestBody UpdateItemQuantityDTO dto) {
         return ResponseEntity.ok(cartService.updateItemQuantity(userId, dto));
     }
 
     // Remove an item
     @DeleteMapping("/{userId}/items/{productId}")
-    public ResponseEntity<CartDTO> removeItem(@PathVariable String userId, @PathVariable String productId) {
+    public ResponseEntity<CartDTO> removeItem(@PathVariable Long userId, @PathVariable String productId) {
         return ResponseEntity.ok(cartService.removeItem(userId, productId));
     }
 
     // Clear the cart
     @DeleteMapping("/{userId}")
-    public ResponseEntity<CartDTO> clear(@PathVariable String userId) {
+    public ResponseEntity<CartDTO> clear(@PathVariable Long userId) {
         return ResponseEntity.ok(cartService.clearCart(userId));
     }
 }

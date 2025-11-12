@@ -15,7 +15,7 @@ import java.util.List;
 @Builder
 public class CartDTO {
     private String id;
-    private String userId;
+    private Long userId;
     private List<CartItemDTO> items;
     private BigDecimal total;
     private Instant createdAt;

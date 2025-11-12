@@ -6,6 +6,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import java.util.Optional;
 
 public interface CartRepository extends MongoRepository<Cart, String> {
-    Optional<Cart> findByUserId(String userId);
-    boolean existsByUserId(String userId);
+    Optional<Cart> findByUserId(Long userId);
+    boolean existsByUserId(Long userId);
 }

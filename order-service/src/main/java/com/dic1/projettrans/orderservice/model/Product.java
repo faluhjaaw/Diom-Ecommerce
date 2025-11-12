@@ -1,4 +1,4 @@
-package com.dic1.projettrans.cartservice.dto;
+package com.dic1.projettrans.orderservice.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,9 +11,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CartItemDTO {
-    private String productId;
+public class Product {
+    private String id;
     private String name;
-    private Integer quantity;
-    private BigDecimal unitPrice;
+    private BigDecimal price;
 }

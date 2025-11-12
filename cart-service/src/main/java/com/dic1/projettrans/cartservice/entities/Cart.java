@@ -26,7 +26,7 @@ public class Cart {
 
     // Owner of the cart (user id)
     @Indexed(unique = true)
-    private String userId;
+    private Long userId;
 
     @Builder.Default
     private List<CartItem> items = new ArrayList<>();

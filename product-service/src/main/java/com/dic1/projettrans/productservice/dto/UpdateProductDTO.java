@@ -20,7 +20,7 @@ public class UpdateProductDTO {
     private BigDecimal price;
     private Integer stock;
     private String subCategoryId;
-    private String vendorId;
+    private Long vendorId;
     private String brand;
     private List<String> imageUrls;
     private List<String> tags;
