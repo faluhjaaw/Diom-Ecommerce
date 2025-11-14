@@ -21,7 +21,6 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenBlacklist tokenBlacklist;
-    private final String secret = "eCommerceSecret123";
 
     public JwtAuthenticationFilter(TokenBlacklist tokenBlacklist) {
         this.tokenBlacklist = tokenBlacklist;
@@ -43,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         try {
+            String secret = "eCommerceSecret123";
             DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
             String numero = jwt.getSubject();
             String role = jwt.getClaim("role").asString();

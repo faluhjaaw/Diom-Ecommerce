@@ -1,9 +1,6 @@
 package com.dic1.projettrans.authentication.controllers;
 
-import com.dic1.projettrans.authentication.dto.LoginDTO;
-import com.dic1.projettrans.authentication.dto.MailCheckDTO;
-import com.dic1.projettrans.authentication.dto.RegisterDTO;
-import com.dic1.projettrans.authentication.dto.RegisterWithOtpDTO;
+import com.dic1.projettrans.authentication.dto.*;
 import com.dic1.projettrans.authentication.filters.TokenBlacklist;
 import com.dic1.projettrans.authentication.services.AuthService;
 import com.dic1.projettrans.authentication.services.AuthServiceImpl;
@@ -33,16 +30,23 @@ public class AuthController {
     }
 
     @PostMapping("/register1")
-    public ResponseEntity<?> register(@RequestBody RegisterDTO registerDTO) {
+    public ResponseEntity<?> register(@RequestBody OtpGenerateDTO registerDTO) {
         authService.initRegister(registerDTO);
         return ResponseEntity.ok("OTP envoyé");
     }
 
-    @PostMapping("/register2")
-    public ResponseEntity<?> verifyMail(@RequestBody RegisterWithOtpDTO request) {
-        boolean valid = authService.completeRegister(request.getRegisterDTO(), request.getOtpCode());
-        return valid ? ResponseEntity.ok("Inscription Réussie") : ResponseEntity.status(403).body("OTP invalide");
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyMail(@RequestBody MailCheckDTO request) {
+        boolean valid = authService.checkMail(request);
+        return valid ? ResponseEntity.ok("Vérification Réussie") : ResponseEntity.status(403).body("OTP invalide");
     }
+
+    @PostMapping("/register2")
+    public ResponseEntity<?> register2(@RequestBody RegisterDTO request) {
+        boolean valid = authService.completeRegister(request);
+        return valid ? ResponseEntity.ok("Inscription Réussie") : ResponseEntity.status(403).body("Infos invalides");
+    }
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
@@ -53,4 +57,18 @@ public class AuthController {
         }
         return ResponseEntity.status(403).body("Utilisateur inconnue");
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.badRequest().body("Token manquant");
+        }
+
+        tokenBlacklist.add(token);
+
+        return ResponseEntity.ok("Déconnexion réussie");
+    }
+
 }

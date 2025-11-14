@@ -1,6 +1,7 @@
 package com.dic1.projettrans.productservice.controllers;
 
 import com.dic1.projettrans.productservice.dto.CreateProductDTO;
+import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ProductDTO;
 import com.dic1.projettrans.productservice.dto.UpdateProductDTO;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
@@ -47,33 +48,33 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductDTO>> getAll() {
+    public ResponseEntity<List<ProductAllDTO>> getAll() {
         return ResponseEntity.ok(productService.getAll());
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<ProductDTO>> searchByName(@RequestParam("query") String query) {
+    public ResponseEntity<List<ProductAllDTO>> searchByName(@RequestParam("query") String query) {
         return ResponseEntity.ok(productService.searchByName(query));
     }
 
     @GetMapping("/filter/category/{categoryId}")
-    public ResponseEntity<List<ProductDTO>> filterByCategory(@PathVariable String categoryId) {
+    public ResponseEntity<List<ProductAllDTO>> filterByCategory(@PathVariable String categoryId) {
         return ResponseEntity.ok(productService.filterByCategory(categoryId));
     }
 
     @GetMapping("/filter/price")
-    public ResponseEntity<List<ProductDTO>> filterByPrice(@RequestParam("min") BigDecimal min,
+    public ResponseEntity<List<ProductAllDTO>> filterByPrice(@RequestParam("min") BigDecimal min,
                                                           @RequestParam("max") BigDecimal max) {
         return ResponseEntity.ok(productService.filterByPriceRange(min, max));
     }
 
     @GetMapping("/filter/rating")
-    public ResponseEntity<List<ProductDTO>> filterByRating(@RequestParam("min") Double min) {
+    public ResponseEntity<List<ProductAllDTO>> filterByRating(@RequestParam("min") Double min) {
         return ResponseEntity.ok(productService.filterByRating(min));
     }
 
     @GetMapping("/filter/condition")
-    public ResponseEntity<List<ProductDTO>> filterByCondition(@RequestParam("value") ProductCondition condition) {
+    public ResponseEntity<List<ProductAllDTO>> filterByCondition(@RequestParam("value") ProductCondition condition) {
         return ResponseEntity.ok(productService.filterByCondition(condition));
     }
 }

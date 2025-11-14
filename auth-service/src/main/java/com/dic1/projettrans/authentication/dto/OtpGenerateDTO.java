@@ -1,11 +1,13 @@
 package com.dic1.projettrans.authentication.dto;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+@Data
 @Getter
 @Setter
-public class TokenDTO {
-    String mail;
-    String role;
+public class OtpGenerateDTO {
+    private String email;
 }
+

@@ -3,27 +3,25 @@ package com.dic1.projettrans.authentication.services;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.dic1.projettrans.authentication.dto.LoginDTO;
-import com.dic1.projettrans.authentication.dto.TokenDTO;
-import com.dic1.projettrans.authentication.entities.User;
-import com.dic1.projettrans.authentication.enums.Role;
-import com.dic1.projettrans.authentication.repositories.UserRepository;
+import com.dic1.projettrans.authentication.feign.CustomerServiceRestClient;
+import com.dic1.projettrans.authentication.model.CustomerUser;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.Optional;
+import java.util.List;
 
 @Service
 public class TokenServiceImpl implements TokenService {
-    private final UserRepository userRepository;
+    private final CustomerServiceRestClient customerClient;
 
-    public TokenServiceImpl(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public TokenServiceImpl(CustomerServiceRestClient customerClient) {
+        this.customerClient = customerClient;
     }
 
     @Override
     public String generateToken(LoginDTO loginDTO) {
-        Optional<User> user = userRepository.findByEmail(loginDTO.getEmail());
-        String role = user.get().getRole().toString();
+        CustomerUser user = customerClient.findUserByEmail(loginDTO.getEmail());
+        String role = user.getEmail();
         return JWT.create()
                 .withSubject(loginDTO.getEmail())
                 .withClaim("role", role)

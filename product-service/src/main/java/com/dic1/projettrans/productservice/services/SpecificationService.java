@@ -11,5 +11,6 @@ public interface SpecificationService {
     List<Product> searchProductsBySpecifications(SpecificationDTO.SpecificationFilterRequest filterRequest);
     CategorySpecification saveSpecificationDefinition(String subCategoryId, List<Product.SpecificationDefinition> specifications);
     boolean validateProductSpecifications(Product product, CategorySpecification categorySpec);
+    List<Product.SpecificationDefinition> getSpecificationsBySubCategoryId(String subCategoryId);
     boolean validateSpecificationValue(String value, Product.SpecificationValue.SpecificationType type, Product.SpecificationDefinition definition);
 }

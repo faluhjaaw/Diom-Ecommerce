@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,7 +39,7 @@ public class Product {
 
     // reference to vendor (seller) user id
     @Indexed
-    private String vendorId;
+    private Long vendorId;
 
     private String brand;
 
@@ -56,7 +57,7 @@ public class Product {
 
     // Specifications dynamiques du produit (clé/valeur)
     @Indexed
-    private Map<String, SpecificationValue> specifications;
+    private Map<String, SpecificationValue> specifications = new HashMap<>();
 
     // URL-friendly unique slug derived from the name
     @Indexed(unique = true)

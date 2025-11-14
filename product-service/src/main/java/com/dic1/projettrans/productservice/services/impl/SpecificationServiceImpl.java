@@ -14,7 +14,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import com.dic1.projettrans.productservice.services.SpecificationService;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +62,17 @@ public class SpecificationServiceImpl implements SpecificationService {
         
         return mongoTemplate.find(query, Product.class);
     }
+
+    @Override
+    public List<Product.SpecificationDefinition> getSpecificationsBySubCategoryId(String subCategoryId) {
+        List<CategorySpecification> list = categorySpecificationRepository.findBySubCategoryId(subCategoryId);
+
+        return list.stream()
+                .filter(Objects::nonNull)
+                .flatMap(cs -> cs.getSpecifications().stream())
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public CategorySpecification saveSpecificationDefinition(String subCategoryId, List<SpecificationDefinition> specifications) {

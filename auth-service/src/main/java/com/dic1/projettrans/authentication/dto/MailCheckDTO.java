@@ -11,5 +11,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MailCheckDTO {
     private String email;
-    private String codeOtp;
+    private String code;
 }

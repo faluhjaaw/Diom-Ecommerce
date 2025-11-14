@@ -1,6 +1,7 @@
 package com.dic1.projettrans.productservice.services;
 
 import com.dic1.projettrans.productservice.dto.CreateProductDTO;
+import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ProductDTO;
 import com.dic1.projettrans.productservice.dto.UpdateProductDTO;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
@@ -14,10 +15,10 @@ public interface ProductService {
     Optional<ProductDTO> update(String id, UpdateProductDTO dto);
     boolean delete(String id);
     Optional<ProductDTO> getById(String id);
-    List<ProductDTO> getAll();
-    List<ProductDTO> searchByName(String query);
-    List<ProductDTO> filterByCategory(String categoryId);
-    List<ProductDTO> filterByPriceRange(BigDecimal min, BigDecimal max);
-    List<ProductDTO> filterByRating(Double minRating);
-    List<ProductDTO> filterByCondition(ProductCondition condition);
+    List<ProductAllDTO> getAll();
+    List<ProductAllDTO> searchByName(String query);
+    List<ProductAllDTO> filterByCategory(String categoryId);
+    List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max);
+    List<ProductAllDTO> filterByRating(Double minRating);
+    List<ProductAllDTO> filterByCondition(ProductCondition condition);
 }
