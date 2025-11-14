@@ -1,5 +1,6 @@
 package com.dic1.projettrans.productservice.dto;
 
+import com.dic1.projettrans.productservice.entities.Product;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,5 +27,5 @@ public class UpdateProductDTO {
     private List<String> tags;
     private ProductCondition condition;
     private Double rating;
-    private Map<String, String> specifications;
+    private Map<String, Product.SpecificationValue> specifications;
 }

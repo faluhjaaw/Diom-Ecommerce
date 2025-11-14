@@ -29,14 +29,6 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public CartDTO getOrCreateCart(Long userId) {
-        // Validate customer exists when accessing cart
-        try {
-            if (customerClient.findUserById(userId) == null) {
-                throw new IllegalArgumentException("Customer not found: " + userId);
-            }
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Customer not found: " + userId);
-        }
         return cartRepository.findByUserId(userId)
                 .map(this::toDTO)
                 .orElseGet(() -> {

@@ -16,7 +16,7 @@ import java.util.List;
 @Builder
 public class OrderDTO {
     private String id;
-    private String userId;
+    private Long userId;
     private List<OrderItemDTO> items;
     private BigDecimal total;
     private OrderStatus status;

@@ -33,14 +33,21 @@ public class UtilisateurController {
         return utilisateurRepository.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/id/{id}")
     public ResponseEntity<Utilisateur> findById(@PathVariable Long id) {
         return utilisateurRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}")
+    @GetMapping("/email/{email:.+}")
+    public ResponseEntity<Utilisateur> findByEmail(@PathVariable String email) {
+        return utilisateurRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/id/{id}")
     public ResponseEntity<Utilisateur> update(@PathVariable Long id, @RequestBody Utilisateur incoming) {
         return utilisateurRepository.findById(id)
                 .map(existing -> {

@@ -1,6 +1,7 @@
 package com.dic1.projettrans.productservice.services.impl;
 
 import com.dic1.projettrans.productservice.dto.CreateProductDTO;
+import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ProductDTO;
 import com.dic1.projettrans.productservice.dto.UpdateProductDTO;
 import com.dic1.projettrans.productservice.entities.Product;
@@ -44,6 +45,7 @@ public class ProductServiceImpl implements ProductService {
                 .tags(dto.getTags())
                 .condition(dto.getCondition())
                 .rating(dto.getRating())
+                .specifications(dto.getSpecifications())
                 .build();
         // Generate unique slug from name if provided
         if (product.getName() != null) {
@@ -74,6 +76,17 @@ public class ProductServiceImpl implements ProductService {
             if (dto.getTags() != null) existing.setTags(dto.getTags());
             if (dto.getCondition() != null) existing.setCondition(dto.getCondition());
             if (dto.getRating() != null) existing.setRating(dto.getRating());
+            System.out.println("Existing Specifications: {}" + existing.getSpecifications());
+
+            if (dto.getSpecifications() != null) {
+                if (existing.getSpecifications() == null) {
+                    System.out.println("DTO Specifications: {}" + dto.getSpecifications());
+                    existing.setSpecifications(dto.getSpecifications());
+                } else {
+                    // fusion : on met à jour les clés existantes ou on en ajoute
+                    dto.getSpecifications().forEach(existing.getSpecifications()::put);
+                }
+            }
 
             if (nameChanged && existing.getName() != null) {
                 String base = slugify(existing.getName());
@@ -97,37 +110,37 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDTO> getAll() {
-        return productRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
+    public List<ProductAllDTO> getAll() {
+        return productRepository.findAll().stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductDTO> searchByName(String query) {
-        return productRepository.findByNameContainingIgnoreCase(query).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<ProductAllDTO> searchByName(String query) {
+        return productRepository.findByNameContainingIgnoreCase(query).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductDTO> filterByCategory(String categoryId) {
+    public List<ProductAllDTO> filterByCategory(String categoryId) {
         // find all subcategories under the category, then products by those subcategory ids
         List<String> subIds = subCategoryRepository.findByCategoryId(categoryId)
                 .stream().map(SubCategory::getId).collect(Collectors.toList());
         if (subIds.isEmpty()) return List.of();
-        return productRepository.findBySubCategoryIdIn(subIds).stream().map(this::toDTO).collect(Collectors.toList());
+        return productRepository.findBySubCategoryIdIn(subIds).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductDTO> filterByPriceRange(BigDecimal min, BigDecimal max) {
-        return productRepository.findByPriceBetween(min, max).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max) {
+        return productRepository.findByPriceBetween(min, max).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductDTO> filterByRating(Double minRating) {
-        return productRepository.findByRatingGreaterThanEqual(minRating).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<ProductAllDTO> filterByRating(Double minRating) {
+        return productRepository.findByRatingGreaterThanEqual(minRating).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
-    public List<ProductDTO> filterByCondition(ProductCondition condition) {
-        return productRepository.findByCondition(condition).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<ProductAllDTO> filterByCondition(ProductCondition condition) {
+        return productRepository.findByCondition(condition).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     private ProductDTO toDTO(Product product) {
@@ -148,8 +161,23 @@ public class ProductServiceImpl implements ProductService {
                 .slug(product.getSlug())
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
+                .specifications(product.getSpecifications())
                 .build();
     }
+
+    private ProductAllDTO toAllDTO(Product product) {
+        if (product == null) return null;
+        return ProductAllDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .stock(product.getStock())
+                .imageUrls(product.getImageUrls())
+                .rating(product.getRating())
+                .build();
+    }
+
 
     private String slugify(String input) {
         String s = input.toLowerCase();

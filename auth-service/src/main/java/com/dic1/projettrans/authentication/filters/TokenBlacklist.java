@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class TokenBlacklist {
 
-    private Set<String> blacklist = ConcurrentHashMap.newKeySet();
+    private final Set<String> blacklist = ConcurrentHashMap.newKeySet();
 
     public void add(String token) {
         blacklist.add(token);

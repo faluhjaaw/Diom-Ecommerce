@@ -12,8 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreateOrderDTO {
-    private String userId;
+    private Long userId;
     private List<OrderItemDTO> items;
-    private String shippingAddress;
     private String paymentMethod;
 }

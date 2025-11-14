@@ -11,7 +11,7 @@ public interface OrderService {
     OrderDTO create(CreateOrderDTO dto);
     Optional<OrderDTO> getById(String id);
     List<OrderDTO> getAll();
-    List<OrderDTO> listByUser(String userId);
+    List<OrderDTO> listByUser(Long userId);
     List<OrderDTO> listByStatus(OrderStatus status);
     Optional<OrderDTO> updateStatus(String id, OrderStatus status);
     boolean delete(String id);

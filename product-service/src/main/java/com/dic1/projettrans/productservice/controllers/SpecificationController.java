@@ -20,6 +20,21 @@ public class SpecificationController {
 
     private final SpecificationService specificationService;
 
+    @GetMapping("/subcategory/{subCategoryId}")
+    public ResponseEntity<List<Product.SpecificationDefinition>> getSpecificationsBySubCategoryId(
+            @PathVariable String subCategoryId
+    ) {
+        List<Product.SpecificationDefinition> specifications =
+                specificationService.getSpecificationsBySubCategoryId(subCategoryId);
+
+        if (specifications.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204 si aucune spécification
+        }
+
+        return ResponseEntity.ok(specifications); // 200 avec la liste sinon
+    }
+
+
     @PostMapping("/category/{subCategoryId}")
     public ResponseEntity<CategorySpecification> defineSpecifications(
             @PathVariable String subCategoryId,

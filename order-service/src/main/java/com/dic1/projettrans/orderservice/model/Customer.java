@@ -13,4 +13,5 @@ public class Customer {
     private Long id;
     private String nom;
     private String email;
+    private String adresse;
 }

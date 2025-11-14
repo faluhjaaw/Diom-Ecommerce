@@ -3,6 +3,7 @@ package com.dic1.projettrans.customerservice.services.impl;
 import com.dic1.projettrans.customerservice.entities.Otp;
 import com.dic1.projettrans.customerservice.repositories.OtpRepository;
 import com.dic1.projettrans.customerservice.services.OtpService;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -23,25 +24,33 @@ public class OtpServiceImpl implements OtpService {
     }
 
     @Override
+    @Transactional
     public String generate(String email) {
         Objects.requireNonNull(email, "email ne doit pas être null");
         String normalized = normalize(email);
         // Optionally remove previous OTPs for this email to keep only the latest
-        otpRepository.deleteByEmail(normalized);
+        if(otpRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(normalized).isPresent()){
+            otpRepository.deleteByEmail(normalized);
+        }
 
         String code = String.format("%06d", random.nextInt(1_000_000));
+
+        System.out.println("============================================================");
+        System.out.println("Code OTP pour " + email + ": " + code);
+
         LocalDateTime now = LocalDateTime.now();
         Otp otp = new Otp();
         otp.setEmail(normalized);
         otp.setCode(code);
         otp.setCreatedAt(now);
-        otp.setExpiresAt(now.plus(DEFAULT_TTL));
+        otp.setExpiresAt(LocalDateTime.now().plusMinutes(5));
         otp.setUsed(false);
         otpRepository.save(otp);
         return code;
     }
 
     @Override
+    @Transactional
     public boolean verify(String email, String code) {
         if (email == null || code == null) return false;
         String normalized = normalize(email);

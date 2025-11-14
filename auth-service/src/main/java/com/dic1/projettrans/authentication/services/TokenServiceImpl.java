@@ -20,12 +20,8 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public String generateToken(LoginDTO loginDTO) {
-        List<CustomerUser> users = customerClient.findAllUsers();
-        String role = users.stream()
-                .filter(u -> u.getEmail() != null && u.getEmail().equalsIgnoreCase(loginDTO.getEmail()))
-                .map(u -> u.getRole() == null ? "CUSTOMER" : u.getRole().toString())
-                .findFirst()
-                .orElse("CUSTOMER");
+        CustomerUser user = customerClient.findUserByEmail(loginDTO.getEmail());
+        String role = user.getEmail();
         return JWT.create()
                 .withSubject(loginDTO.getEmail())
                 .withClaim("role", role)

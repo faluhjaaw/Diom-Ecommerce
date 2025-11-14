@@ -32,7 +32,7 @@ public class OrderServiceImpl implements OrderService {
         // Validate customer exists
         long userIdLong;
         try {
-            userIdLong = Long.parseLong(dto.getUserId());
+            userIdLong = dto.getUserId();
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid userId format: " + dto.getUserId());
         }
@@ -77,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
                 .userId(dto.getUserId())
                 .items(items)
                 .total(total)
-                .shippingAddress(dto.getShippingAddress())
+                .shippingAddress(customerClient.findUserById(dto.getUserId()).getAdresse())
                 .paymentMethod(dto.getPaymentMethod())
                 .status(OrderStatus.CREATED)
                 .build();
@@ -96,7 +96,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<OrderDTO> listByUser(String userId) {
+    public List<OrderDTO> listByUser(Long userId) {
         return orderRepository.findByUserId(userId).stream().map(this::toDTO).collect(Collectors.toList());
     }
 

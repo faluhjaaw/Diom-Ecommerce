@@ -27,17 +27,11 @@ public class UtilisateurServiceImpl implements UtilisateurService {
 
     @Override
     public String generateOtpForEmail(String email) {
-        // Ensure the user exists before generating an OTP
-        utilisateurRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable pour l'email: " + email));
         return otpService.generate(email);
     }
 
     @Override
     public boolean verifyOtp(String email, String code) {
-        // Ensure the user exists before verifying an OTP
-        Optional<Utilisateur> opt = utilisateurRepository.findByEmail(email);
-        if (opt.isEmpty()) return false;
         return otpService.verify(email, code);
     }
 }

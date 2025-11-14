@@ -10,10 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CustomerUser {
     private Long id;
-    private String nom;
     private String email;
-    private String telephone;
     private String motDePasse;
-    private String adresse;
     private Role role;
 }

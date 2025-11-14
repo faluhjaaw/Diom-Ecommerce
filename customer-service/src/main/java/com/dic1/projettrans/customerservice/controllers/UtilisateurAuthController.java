@@ -40,10 +40,10 @@ public class UtilisateurAuthController {
     }
 
     @PostMapping("/otp/verify")
-    public ResponseEntity<Map<String, Object>> verifyOtp(@RequestBody OtpVerifyRequest req) {
-        boolean ok = utilisateurService.verifyOtp(req.getEmail(), req.getCode());
+    public ResponseEntity<Map<String, Object>> verifyOtp(@RequestParam String email, @RequestParam String code) {
+        boolean ok = utilisateurService.verifyOtp(email, code);
         Map<String, Object> resp = new HashMap<>();
-        resp.put("email", req.getEmail());
+        resp.put("email", email);
         resp.put("valid", ok);
         return ok ? ResponseEntity.ok(resp) : ResponseEntity.status(400).body(resp);
     }

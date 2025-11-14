@@ -25,7 +25,7 @@ public class Order {
     private String id;
 
     @Indexed
-    private String userId;
+    private Long userId;
 
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
