@@ -120,6 +120,11 @@ public class OrderServiceImpl implements OrderService {
         return true;
     }
 
+    @Override
+    public boolean hasUserOrderedProduct(Long userId, String productId) {
+        return orderRepository.existsByUserIdAndItems_ProductId(userId, productId);
+    }
+
     private void requirePositiveQuantity(Integer q) {
         if (q == null || q <= 0) {
             throw new IllegalArgumentException("Quantity must be > 0");

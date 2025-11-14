@@ -59,4 +59,9 @@ public class OrderController {
         boolean deleted = orderService.delete(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
+
+    @GetMapping("/check")
+    public ResponseEntity<Boolean> checkUserOrder(@RequestParam Long userId, @RequestParam String productId) {
+        return ResponseEntity.ok(orderService.hasUserOrderedProduct(userId, productId));
+    }
 }

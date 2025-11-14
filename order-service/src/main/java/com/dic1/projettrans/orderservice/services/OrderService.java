@@ -15,4 +15,5 @@ public interface OrderService {
     List<OrderDTO> listByStatus(OrderStatus status);
     Optional<OrderDTO> updateStatus(String id, OrderStatus status);
     boolean delete(String id);
+    boolean hasUserOrderedProduct(Long userId, String productId);
 }
