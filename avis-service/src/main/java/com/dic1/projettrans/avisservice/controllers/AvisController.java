@@ -51,9 +51,16 @@ public class AvisController {
     }
 
     @GetMapping("id/{id}")
-    public ResponseEntity<Avis> trouverAvisParId(@PathVariable String avisId) {
-        return avisService.trouverAvisParId(avisId)
+    public ResponseEntity<Avis> trouverAvisParId(@PathVariable String id) {
+        return avisService.trouverAvisParId(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Dans AvisController.java
+    @GetMapping("/produit/{produitId}/moyenne")
+    public ResponseEntity<Double> obtenirNoteMoyenne(@PathVariable String produitId) {
+        Double moyenne = avisService.calculerNoteMoyenne(produitId);
+        return ResponseEntity.ok(moyenne);
     }
 }

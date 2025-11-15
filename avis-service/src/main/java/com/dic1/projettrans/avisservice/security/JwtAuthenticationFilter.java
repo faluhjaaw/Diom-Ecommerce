@@ -1,4 +1,4 @@
-package com.dic1.projettrans.authentication.filters;
+package com.dic1.projettrans.avisservice.security;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -20,12 +20,6 @@ import java.util.List;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final TokenBlacklist tokenBlacklist;
-
-    public JwtAuthenticationFilter(TokenBlacklist tokenBlacklist) {
-        this.tokenBlacklist = tokenBlacklist;
-    }
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -37,27 +31,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         String token = authHeader.substring(7);
-        if (tokenBlacklist.contains(token)) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            return;
-        }
+
         try {
             String secret = "ECommerceSecret123";
             DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
-            String numero = jwt.getSubject();
+            String email = jwt.getSubject();
             String role = jwt.getClaim("role").asString();
-
 
             List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(numero, null, authorities);
+                    new UsernamePasswordAuthenticationToken(email, null, authorities);
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (Exception e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token invalide ou expiré");
             return;
         }
 
         filterChain.doFilter(request, response);
     }
 }
-

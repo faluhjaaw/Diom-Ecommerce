@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
@@ -63,5 +64,13 @@ public class OrderController {
     @GetMapping("/check")
     public ResponseEntity<Boolean> checkUserOrder(@RequestParam Long userId, @RequestParam String productId) {
         return ResponseEntity.ok(orderService.hasUserOrderedProduct(userId, productId));
+    }
+
+    @PostMapping("/from-cart/{cartId}")
+    public ResponseEntity<OrderDTO> createFromCart(@PathVariable String cartId, @RequestBody Map<String, String> body) {
+        Long userId = Long.parseLong(body.get("userId"));
+        String paymentMethod = body.get("paymentMethod");
+        OrderDTO created = orderService.createFromCart(cartId, userId, paymentMethod);
+        return ResponseEntity.created(URI.create("/api/orders/" + created.getId())).body(created);
     }
 }

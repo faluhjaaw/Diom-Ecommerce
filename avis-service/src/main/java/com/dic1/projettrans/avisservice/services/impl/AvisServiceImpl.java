@@ -67,4 +67,19 @@ public class AvisServiceImpl implements AvisService {
     public Optional<Avis> trouverAvisParId(String avisId) {
         return avisRepository.findById(avisId);
     }
+
+    @Override
+    public Double calculerNoteMoyenne(String produitId) {
+        List<Avis> avisList = avisRepository.findByProduitId(produitId);
+
+        if (avisList.isEmpty()) {
+            return 0.0;
+        }
+
+        double somme = avisList.stream()
+                .mapToInt(Avis::getNote)
+                .sum();
+
+        return somme / avisList.size();
+    }
 }

@@ -16,4 +16,5 @@ public interface OrderService {
     Optional<OrderDTO> updateStatus(String id, OrderStatus status);
     boolean delete(String id);
     boolean hasUserOrderedProduct(Long userId, String productId);
+    OrderDTO createFromCart(String cartId, Long userId, String paymentMethod);
 }
