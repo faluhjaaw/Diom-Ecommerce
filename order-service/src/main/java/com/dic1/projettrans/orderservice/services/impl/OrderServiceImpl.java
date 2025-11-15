@@ -5,8 +5,10 @@ import com.dic1.projettrans.orderservice.dto.OrderDTO;
 import com.dic1.projettrans.orderservice.dto.OrderItemDTO;
 import com.dic1.projettrans.orderservice.entities.Order;
 import com.dic1.projettrans.orderservice.entities.OrderStatus;
+import com.dic1.projettrans.orderservice.feign.CartServiceRestClient;
 import com.dic1.projettrans.orderservice.feign.CustomerServiceRestClient;
 import com.dic1.projettrans.orderservice.feign.ProductServiceRestClient;
+import com.dic1.projettrans.orderservice.model.Cart;
 import com.dic1.projettrans.orderservice.model.Product;
 import com.dic1.projettrans.orderservice.repositories.OrderRepository;
 import com.dic1.projettrans.orderservice.services.OrderService;
@@ -26,6 +28,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductServiceRestClient productClient;
     private final CustomerServiceRestClient customerClient;
+    private final CartServiceRestClient cartClient;
 
     @Override
     public OrderDTO create(CreateOrderDTO dto) {
@@ -157,4 +160,52 @@ public class OrderServiceImpl implements OrderService {
                 .updatedAt(order.getUpdatedAt())
                 .build();
     }
+
+    @Override
+    public OrderDTO createFromCart(String cartId, Long userId, String paymentMethod) {
+        // Récupérer le panier
+        Cart cart = null;
+        try {
+            cart = cartClient.getCart(userId);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Impossible de récupérer le panier pour l'utilisateur: " + userId);
+        }
+
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new IllegalArgumentException("Le panier est vide");
+        }
+
+        // Vérifier que l'utilisateur existe
+        try {
+            if (customerClient.findUserById(userId) == null) {
+                throw new IllegalArgumentException("Client non trouvé: " + userId);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Client non trouvé: " + userId);
+        }
+
+        // Convertir les items du panier en items de commande
+        List<Order.OrderItem> orderItems = cart.getItems().stream()
+                .map(cartItem -> Order.OrderItem.builder()
+                        .productId(cartItem.getProductId())
+                        .quantity(cartItem.getQuantity())
+                        .unitPrice(cartItem.getUnitPrice())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Créer la commande
+        Order order = Order.builder()
+                .userId(userId)
+                .items(orderItems)
+                .total(cart.getTotal())
+                .shippingAddress(customerClient.findUserById(userId).getAdresse())
+                .paymentMethod(paymentMethod)
+                .status(OrderStatus.CREATED)
+                .build();
+
+        Order saved = orderRepository.save(order);
+        cartClient.clearCart(userId);
+        return toDTO(saved);
+    }
+
 }

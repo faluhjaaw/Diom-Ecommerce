@@ -18,4 +18,7 @@ public interface AvisService {
     List<Avis> listerAvisParUtilisateur(Long userId);
 
     Optional<Avis> trouverAvisParId(String avisId);
+
+    // Dans AvisService.java
+    Double calculerNoteMoyenne(String produitId);
 }
