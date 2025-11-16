@@ -23,10 +23,10 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void initRegister(OtpGenerateDTO registerDTO) {
+    public void initRegister(String email) {
         CustomerUser user = null;
         try {
-            user = customerClient.findUserByEmail(registerDTO.getEmail());
+            user = customerClient.findUserByEmail(email);
         } catch (Exception e) {
             System.out.println("Utilisateur introuvable !");
         }
@@ -35,10 +35,10 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Un utilisateur avec cet email existe déjà");
         }
 
-        Otp otp = customerClient.generateOTP(registerDTO);
+        Otp otp = customerClient.generateOTP(email);
 
         System.out.println("============================================================");
-        System.out.println("Code OTP pour " + registerDTO.getEmail() + ": " + otp.getOtp());
+        System.out.println("Code OTP pour " + email + ": " + otp.getOtp());
     }
 
     @Override

@@ -26,7 +26,7 @@ public interface CustomerServiceRestClient {
     ResponseEntity<Map<String, Object>> verifyCredentials(@RequestBody CredentialRequest request);
 
     @PostMapping("/api/users/otp/generate")
-    Otp generateOTP(@RequestBody OtpGenerateDTO otpDTO);
+    Otp generateOTP(@RequestParam String email);
 
     @PostMapping("/api/users/otp/verify")
     OtpCheck verifyOTP(@RequestParam String email, @RequestParam String code);

@@ -30,10 +30,10 @@ public class UtilisateurAuthController {
     }
 
     @PostMapping("/otp/generate")
-    public ResponseEntity<Map<String, Object>> generateOtp(@RequestBody OtpGenerateRequest req) {
-        String code = utilisateurService.generateOtpForEmail(req.getEmail());
+    public ResponseEntity<Map<String, Object>> generateOtp(@RequestParam String email) {
+        String code = utilisateurService.generateOtpForEmail(email);
         Map<String, Object> resp = new HashMap<>();
-        resp.put("email", req.getEmail());
+        resp.put("email", email);
         resp.put("otp", code);
         resp.put("message", "OTP généré (valide 5 minutes)");
         return ResponseEntity.ok(resp);
