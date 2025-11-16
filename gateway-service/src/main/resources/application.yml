@@ -1,0 +1,111 @@
+# gateway-service/src/main/resources/application.yml
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+          # Authentication Service - API
+          - id: authentication-api
+            uri: lb://authentication
+            predicates:
+              - Path=/authentication/api/**
+            filters:
+              - RewritePath=/authentication/(?<segment>.*), /$\{segment}
+
+          # Authentication Service - Swagger
+          - id: authentication-swagger
+            uri: lb://authentication
+            predicates:
+              - Path=/authentication/v3/api-docs, /authentication/swagger-ui/**, /authentication/swagger-ui.html
+            filters:
+              - RewritePath=/authentication/(?<segment>.*), /$\{segment}
+
+          # Customer Service - API
+          - id: customer-service-api
+            uri: lb://customer-service
+            predicates:
+              - Path=/customer-service/api/**
+            filters:
+              - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
+
+          # Customer Service - Swagger
+          - id: customer-service-swagger
+            uri: lb://customer-service
+            predicates:
+              - Path=/customer-service/v3/api-docs, /customer-service/swagger-ui/**, /customer-service/swagger-ui.html
+            filters:
+              - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
+
+          # Product Service - API
+          - id: product-service-api
+            uri: lb://product-service
+            predicates:
+              - Path=/product-service/api/**
+            filters:
+              - RewritePath=/product-service/(?<segment>.*), /$\{segment}
+
+          # Product Service - Swagger
+          - id: product-service-swagger
+            uri: lb://product-service
+            predicates:
+              - Path=/product-service/v3/api-docs, /product-service/swagger-ui/**, /product-service/swagger-ui.html
+            filters:
+              - RewritePath=/product-service/(?<segment>.*), /$\{segment}
+
+          # Cart Service - API
+          - id: cart-service-api
+            uri: lb://cart-service
+            predicates:
+              - Path=/cart-service/api/**
+            filters:
+              - RewritePath=/cart-service/(?<segment>.*), /$\{segment}
+
+          # Cart Service - Swagger
+          - id: cart-service-swagger
+            uri: lb://cart-service
+            predicates:
+              - Path=/cart-service/v3/api-docs, /cart-service/swagger-ui/**, /cart-service/swagger-ui.html
+            filters:
+              - RewritePath=/cart-service/(?<segment>.*), /$\{segment}
+
+          # Order Service - API
+          - id: order-service-api
+            uri: lb://order-service
+            predicates:
+              - Path=/order-service/api/**
+            filters:
+              - RewritePath=/order-service/(?<segment>.*), /$\{segment}
+
+          # Order Service - Swagger
+          - id: order-service-swagger
+            uri: lb://order-service
+            predicates:
+              - Path=/order-service/v3/api-docs, /order-service/swagger-ui/**, /order-service/swagger-ui.html
+            filters:
+              - RewritePath=/order-service/(?<segment>.*), /$\{segment}
+
+          # Avis Service - API
+          - id: avis-service-api
+            uri: lb://avis-service
+            predicates:
+              - Path=/avis-service/api/**
+            filters:
+              - RewritePath=/avis-service/(?<segment>.*), /$\{segment}
+
+          # Avis Service - Swagger
+          - id: avis-service-swagger
+            uri: lb://avis-service
+            predicates:
+              - Path=/avis-service/v3/api-docs, /avis-service/swagger-ui/**, /avis-service/swagger-ui.html
+            filters:
+              - RewritePath=/avis-service/(?<segment>.*), /$\{segment}
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
