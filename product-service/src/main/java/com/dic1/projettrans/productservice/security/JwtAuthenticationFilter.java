@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
-            String secret = "eCommerceSecret123";
+            String secret = "ECommerceSecret123";
             DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
             String email = jwt.getSubject();
             String role = jwt.getClaim("role").asString();

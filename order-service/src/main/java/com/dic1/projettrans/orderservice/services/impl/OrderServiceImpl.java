@@ -80,7 +80,7 @@ public class OrderServiceImpl implements OrderService {
                 .userId(dto.getUserId())
                 .items(items)
                 .total(total)
-                .shippingAddress(customerClient.findUserById(dto.getUserId()).getAdresse())
+                .shippingAddress(dto.getShippingAddress())
                 .paymentMethod(dto.getPaymentMethod())
                 .status(OrderStatus.CREATED)
                 .build();
@@ -162,7 +162,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderDTO createFromCart(String cartId, Long userId, String paymentMethod) {
+    public OrderDTO createFromCart(String cartId, Long userId, String paymentMethod, String shippingAddress) {
         // Récupérer le panier
         Cart cart = null;
         try {
@@ -198,7 +198,7 @@ public class OrderServiceImpl implements OrderService {
                 .userId(userId)
                 .items(orderItems)
                 .total(cart.getTotal())
-                .shippingAddress(customerClient.findUserById(userId).getAdresse())
+                .shippingAddress(shippingAddress)
                 .paymentMethod(paymentMethod)
                 .status(OrderStatus.CREATED)
                 .build();

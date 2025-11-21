@@ -47,4 +47,15 @@ public class CartController {
     public ResponseEntity<CartDTO> clear(@PathVariable Long userId) {
         return ResponseEntity.ok(cartService.clearCart(userId));
     }
+
+    // Endpoints internes pour les appels entre services
+    @GetMapping("/internal/{userId}")
+    public ResponseEntity<CartDTO> getOrCreateInternal(@PathVariable Long userId) {
+        return ResponseEntity.ok(cartService.getOrCreateCart(userId));
+    }
+
+    @DeleteMapping("/internal/{userId}")
+    public ResponseEntity<CartDTO> clearInternal(@PathVariable Long userId) {
+        return ResponseEntity.ok(cartService.clearCart(userId));
+    }
 }

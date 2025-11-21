@@ -27,7 +27,8 @@ public class AuthController {
     }
 
     @PostMapping("/register1")
-    public ResponseEntity<?> register(@RequestParam String email) {
+    public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
         authService.initRegister(email);
         return ResponseEntity.ok("OTP envoyé");
     }

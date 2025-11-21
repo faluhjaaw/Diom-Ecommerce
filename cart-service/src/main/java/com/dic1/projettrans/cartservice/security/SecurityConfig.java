@@ -14,9 +14,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtFilter;
+    private final InternalTokenFilter internalTokenFilter;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter, InternalTokenFilter internalTokenFilter) {
         this.jwtFilter = jwtFilter;
+        this.internalTokenFilter = internalTokenFilter;
     }
 
     @Bean
@@ -27,12 +29,15 @@ public class SecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Endpoints internes - DOIT être avant /api/carts/**
+                        .requestMatchers("/internal/**", "/api/carts/internal/**").permitAll()
 
                         // Panier nécessite authentification
                         .requestMatchers("/api/carts/**").authenticated()
 
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(internalTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

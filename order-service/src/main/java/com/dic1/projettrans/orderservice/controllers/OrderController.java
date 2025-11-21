@@ -70,7 +70,14 @@ public class OrderController {
     public ResponseEntity<OrderDTO> createFromCart(@PathVariable String cartId, @RequestBody Map<String, String> body) {
         Long userId = Long.parseLong(body.get("userId"));
         String paymentMethod = body.get("paymentMethod");
-        OrderDTO created = orderService.createFromCart(cartId, userId, paymentMethod);
+        String shippingAddress = body.get("shippingAddress");
+        OrderDTO created = orderService.createFromCart(cartId, userId, paymentMethod, shippingAddress);
         return ResponseEntity.created(URI.create("/api/orders/" + created.getId())).body(created);
+    }
+
+    // Endpoint interne pour les appels entre services
+    @GetMapping("/internal/check")
+    public ResponseEntity<Boolean> checkUserOrderInternal(@RequestParam Long userId, @RequestParam String productId) {
+        return ResponseEntity.ok(orderService.hasUserOrderedProduct(userId, productId));
     }
 }

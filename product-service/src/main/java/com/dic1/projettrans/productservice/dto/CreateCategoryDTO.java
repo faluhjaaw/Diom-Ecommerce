@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CreateCategoryDTO {
     private String name;
+    private String image;
     private String description;
     private String parentId;
 }

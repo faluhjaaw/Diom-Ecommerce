@@ -72,6 +72,7 @@ public class CategoryServiceImpl implements CategoryService {
         return CategoryDTO.builder()
                 .id(category.getId())
                 .name(category.getName())
+                .image(category.getImage())
                 .description(category.getDescription())
                 .parentId(category.getParentId())
                 .build();

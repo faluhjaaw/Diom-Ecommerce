@@ -15,4 +15,5 @@ public class CreateOrderDTO {
     private Long userId;
     private List<OrderItemDTO> items;
     private String paymentMethod;
+    private String shippingAddress;
 }

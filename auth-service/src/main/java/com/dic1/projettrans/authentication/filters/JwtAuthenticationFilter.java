@@ -36,6 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // OPTIONS bypass
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String token = authHeader.substring(7);
         if (tokenBlacklist.contains(token)) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

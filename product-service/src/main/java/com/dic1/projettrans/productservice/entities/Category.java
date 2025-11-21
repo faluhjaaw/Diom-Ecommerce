@@ -29,6 +29,8 @@ public class Category {
     // Optional parent category id for hierarchy
     private String parentId;
 
+    private String image;
+
     @CreatedDate
     private Instant createdAt;
 
