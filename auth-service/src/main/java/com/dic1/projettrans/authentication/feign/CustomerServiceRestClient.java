@@ -33,4 +33,6 @@ public interface CustomerServiceRestClient {
 
     @PostMapping("/api/users")
     Utilisateur inscription(@RequestBody Utilisateur user);
+
+
 }

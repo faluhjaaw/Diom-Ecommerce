@@ -1,8 +1,10 @@
 package com.dic1.projettrans.customerservice.controllers;
 
+import com.dic1.projettrans.customerservice.controllers.dto.UpdateVendeurDTO;
 import com.dic1.projettrans.customerservice.entities.Role;
 import com.dic1.projettrans.customerservice.entities.Vendeur;
 import com.dic1.projettrans.customerservice.repositories.VendeurRepository;
+import org.hibernate.sql.Update;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,19 +42,15 @@ public class VendeurController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Vendeur> update(@PathVariable Long id, @RequestBody Vendeur incoming) {
+    public ResponseEntity<Vendeur> update(@PathVariable Long id, @RequestBody UpdateVendeurDTO incoming) {
         return vendeurRepository.findById(id)
                 .map(existing -> {
                     existing.setNom(incoming.getNom());
-                    existing.setEmail(incoming.getEmail());
+                    existing.setPrenom(incoming.getPrenom());
                     existing.setTelephone(incoming.getTelephone());
-                    if (incoming.getMotDePasse() != null && !incoming.getMotDePasse().isEmpty()) {
-                        existing.setMotDePasse(incoming.getMotDePasse());
-                    }
                     existing.setBio(incoming.getBio());
                     existing.setNomBoutique(incoming.getNomBoutique());
                     existing.setPhotoUrl(incoming.getPhotoUrl());
-                    existing.setRole(Role.VENDEUR);
                     return ResponseEntity.ok(vendeurRepository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
