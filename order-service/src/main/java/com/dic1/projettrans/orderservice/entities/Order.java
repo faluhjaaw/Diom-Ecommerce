@@ -52,6 +52,7 @@ public class Order {
     @Builder
     public static class OrderItem {
         private String productId;
+        private Long vendorId;
         private Integer quantity; // >= 1
         private BigDecimal unitPrice; // price at time of order
     }

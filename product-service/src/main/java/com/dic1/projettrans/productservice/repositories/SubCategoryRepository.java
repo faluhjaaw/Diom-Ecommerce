@@ -8,5 +8,6 @@ import java.util.List;
 public interface SubCategoryRepository extends MongoRepository<SubCategory, String> {
     List<SubCategory> findByNameContainingIgnoreCase(String name);
     List<SubCategory> findByCategoryId(String categoryId);
-    boolean existsByName(String name);
+    boolean existsByNameAndCategoryId(String name, String categoryId);
+    void deleteByCategoryId(String categoryId);
 }

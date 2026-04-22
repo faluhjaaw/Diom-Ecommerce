@@ -69,7 +69,7 @@ public class Product {
     @AllArgsConstructor
     @Builder
     public static class SpecificationValue {
-        private String value;
+        private Object value;
         private SpecificationType type;
 
         public enum SpecificationType {

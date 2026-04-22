@@ -1,4 +1,4 @@
-package com.dic1.projettrans.productservice.dto;
+package com.dic1.projettrans.orderservice.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CategoryDTO {
-    private String id;
-    private String name;
-    private String description;
+public class OrderCreatedEvent {
+    private String orderId;
+    private Long userId;
 }

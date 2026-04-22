@@ -5,6 +5,8 @@ import com.dic1.projettrans.productservice.dto.CreateCategoryDTO;
 import com.dic1.projettrans.productservice.dto.UpdateCategoryDTO;
 import com.dic1.projettrans.productservice.entities.Category;
 import com.dic1.projettrans.productservice.repositories.CategoryRepository;
+import com.dic1.projettrans.productservice.repositories.CategorySpecificationRepository;
+import com.dic1.projettrans.productservice.repositories.SubCategoryRepository;
 import com.dic1.projettrans.productservice.services.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,20 +20,19 @@ import java.util.stream.Collectors;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final SubCategoryRepository subCategoryRepository;
+    private final CategorySpecificationRepository categorySpecificationRepository;
 
     @Override
     public CategoryDTO create(CreateCategoryDTO dto) {
-        // Ensure unique name (basic check)
         if (dto.getName() != null && categoryRepository.existsByNameIgnoreCase(dto.getName())) {
-            throw new IllegalArgumentException("Category name already exists: " + dto.getName());
+            throw new IllegalArgumentException("Une catégorie avec ce nom existe déjà : " + dto.getName());
         }
         Category category = Category.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
-                .parentId(dto.getParentId())
                 .build();
-        Category saved = categoryRepository.save(category);
-        return toDTO(saved);
+        return toDTO(categoryRepository.save(category));
     }
 
     @Override
@@ -39,15 +40,20 @@ public class CategoryServiceImpl implements CategoryService {
         return categoryRepository.findById(id).map(existing -> {
             if (dto.getName() != null) existing.setName(dto.getName());
             if (dto.getDescription() != null) existing.setDescription(dto.getDescription());
-            if (dto.getParentId() != null) existing.setParentId(dto.getParentId());
-            Category saved = categoryRepository.save(existing);
-            return toDTO(saved);
+            return toDTO(categoryRepository.save(existing));
         });
     }
 
     @Override
     public boolean delete(String id) {
         if (!categoryRepository.existsById(id)) return false;
+        // Cascade : supprimer les specs des sous-catégories puis les sous-catégories
+        List<String> subCategoryIds = subCategoryRepository.findByCategoryId(id)
+                .stream().map(sc -> sc.getId()).collect(Collectors.toList());
+        if (!subCategoryIds.isEmpty()) {
+            categorySpecificationRepository.deleteBySubCategoryIdIn(subCategoryIds);
+            subCategoryRepository.deleteByCategoryId(id);
+        }
         categoryRepository.deleteById(id);
         return true;
     }
@@ -63,8 +69,15 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public List<CategoryDTO> getChildren(String parentId) {
-        return categoryRepository.findByParentId(parentId).stream().map(this::toDTO).collect(Collectors.toList());
+    public List<CategoryDTO> getChildren(String categoryId) {
+        // retourne les sous-catégories comme enfants de la catégorie
+        return subCategoryRepository.findByCategoryId(categoryId).stream()
+                .map(sc -> CategoryDTO.builder()
+                        .id(sc.getId())
+                        .name(sc.getName())
+                        .description(sc.getDescription())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private CategoryDTO toDTO(Category category) {
@@ -73,7 +86,6 @@ public class CategoryServiceImpl implements CategoryService {
                 .id(category.getId())
                 .name(category.getName())
                 .description(category.getDescription())
-                .parentId(category.getParentId())
                 .build();
     }
 }

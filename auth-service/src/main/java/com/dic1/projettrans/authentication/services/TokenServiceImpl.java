@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.dic1.projettrans.authentication.dto.LoginDTO;
 import com.dic1.projettrans.authentication.feign.CustomerServiceRestClient;
 import com.dic1.projettrans.authentication.model.CustomerUser;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -14,6 +15,9 @@ import java.util.List;
 public class TokenServiceImpl implements TokenService {
     private final CustomerServiceRestClient customerClient;
 
+    @Value("${jwt.secret}")
+    private String jwtSecret;
+
     public TokenServiceImpl(CustomerServiceRestClient customerClient) {
         this.customerClient = customerClient;
     }
@@ -21,12 +25,12 @@ public class TokenServiceImpl implements TokenService {
     @Override
     public String generateToken(LoginDTO loginDTO) {
         CustomerUser user = customerClient.findUserByEmail(loginDTO.getEmail());
-        String role = user.getEmail();
+        String role = user.getRole() != null ? user.getRole().name() : "CUSTOMER";
         return JWT.create()
                 .withSubject(loginDTO.getEmail())
                 .withClaim("role", role)
                 .withIssuedAt(new Date())
                 //.withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 heure
-                .sign(Algorithm.HMAC256("ECommerceSecret123"));
+                .sign(Algorithm.HMAC256(jwtSecret));
     }
 }

@@ -8,6 +8,7 @@ import com.dic1.projettrans.authentication.services.TokenService;
 import com.dic1.projettrans.authentication.services.TokenServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -53,6 +54,16 @@ public class AuthController {
             return ResponseEntity.ok(Map.of("token", token));
         }
         return ResponseEntity.status(403).body("Utilisateur inconnue");
+    }
+
+    // Création directe d'un utilisateur par un admin (bypass OTP)
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/register")
+    public ResponseEntity<?> adminCreateUser(@RequestBody RegisterDTO request) {
+        boolean created = authService.completeRegister(request);
+        return created
+                ? ResponseEntity.ok("Utilisateur créé avec succès")
+                : ResponseEntity.status(500).body("Erreur lors de la création");
     }
 
     @PostMapping("/logout")

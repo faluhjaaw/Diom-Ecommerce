@@ -4,6 +4,7 @@ import com.dic1.projettrans.avisservice.entities.Avis;
 import com.dic1.projettrans.avisservice.services.AvisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +17,7 @@ public class AvisController {
     private final AvisService avisService;
 
     // Ajouter un avis
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
     public ResponseEntity<Avis> ajouterAvis(@RequestBody Avis avis) {
         Avis created = avisService.ajouterAvis(avis);
@@ -23,6 +25,7 @@ public class AvisController {
     }
 
     // Modifier un avis
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<Avis> modifierAvis(@PathVariable String id, @RequestBody Avis avis) {
         Avis updated = avisService.modifierAvis(id, avis);
@@ -30,6 +33,7 @@ public class AvisController {
     }
 
     // Supprimer un avis
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> supprimerAvis(@PathVariable String id) {
         avisService.supprimerAvis(id);

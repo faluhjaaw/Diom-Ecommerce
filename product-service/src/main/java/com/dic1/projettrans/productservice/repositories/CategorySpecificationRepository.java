@@ -10,4 +10,7 @@ import java.util.Optional;
 @Repository
 public interface CategorySpecificationRepository extends MongoRepository<CategorySpecification, String> {
     List<CategorySpecification> findBySubCategoryId(String subCategoryId);
+    Optional<CategorySpecification> findFirstBySubCategoryId(String subCategoryId);
+    void deleteBySubCategoryId(String subCategoryId);
+    void deleteBySubCategoryIdIn(List<String> subCategoryIds);
 }

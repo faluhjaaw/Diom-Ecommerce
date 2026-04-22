@@ -26,9 +26,6 @@ public class Category {
 
     private String description;
 
-    // Optional parent category id for hierarchy
-    private String parentId;
-
     @CreatedDate
     private Instant createdAt;
 

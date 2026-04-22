@@ -6,6 +6,7 @@ import com.dic1.projettrans.cartservice.dto.UpdateItemQuantityDTO;
 import com.dic1.projettrans.cartservice.services.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -18,12 +19,14 @@ public class CartController {
     private final CartService cartService;
 
     // Get or create the cart for a user
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @GetMapping("/{userId}")
     public ResponseEntity<CartDTO> getOrCreate(@PathVariable Long userId) {
         return ResponseEntity.ok(cartService.getOrCreateCart(userId));
     }
 
     // Add item to cart
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @PostMapping("/{userId}/items")
     public ResponseEntity<CartDTO> addItem(@PathVariable Long userId, @RequestBody AddItemDTO dto) {
         CartDTO updated = cartService.addItem(userId, dto);
@@ -31,18 +34,21 @@ public class CartController {
     }
 
     // Update item quantity
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @PutMapping("/{userId}/items")
     public ResponseEntity<CartDTO> updateItemQuantity(@PathVariable Long userId, @RequestBody UpdateItemQuantityDTO dto) {
         return ResponseEntity.ok(cartService.updateItemQuantity(userId, dto));
     }
 
     // Remove an item
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @DeleteMapping("/{userId}/items/{productId}")
     public ResponseEntity<CartDTO> removeItem(@PathVariable Long userId, @PathVariable String productId) {
         return ResponseEntity.ok(cartService.removeItem(userId, productId));
     }
 
     // Clear the cart
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     @DeleteMapping("/{userId}")
     public ResponseEntity<CartDTO> clear(@PathVariable Long userId) {
         return ResponseEntity.ok(cartService.clearCart(userId));

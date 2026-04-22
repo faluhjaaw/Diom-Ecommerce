@@ -6,6 +6,7 @@ import com.dic1.projettrans.productservice.dto.UpdateCategoryDTO;
 import com.dic1.projettrans.productservice.services.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -18,12 +19,14 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CategoryDTO> create(@RequestBody CreateCategoryDTO dto) {
         CategoryDTO created = categoryService.create(dto);
         return ResponseEntity.created(URI.create("/api/categories/" + created.getId())).body(created);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CategoryDTO> update(@PathVariable String id, @RequestBody UpdateCategoryDTO dto) {
         return categoryService.update(id, dto)
@@ -31,6 +34,7 @@ public class CategoryController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         boolean deleted = categoryService.delete(id);

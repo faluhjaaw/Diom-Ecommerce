@@ -11,6 +11,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -21,6 +22,9 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenBlacklist tokenBlacklist;
+
+    @Value("${jwt.secret}")
+    private String jwtSecret;
 
     public JwtAuthenticationFilter(TokenBlacklist tokenBlacklist) {
         this.tokenBlacklist = tokenBlacklist;
@@ -42,8 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         try {
-            String secret = "ECommerceSecret123";
-            DecodedJWT jwt = JWT.require(Algorithm.HMAC256(secret)).build().verify(token);
+            DecodedJWT jwt = JWT.require(Algorithm.HMAC256(jwtSecret)).build().verify(token);
             String numero = jwt.getSubject();
             String role = jwt.getClaim("role").asString();
 

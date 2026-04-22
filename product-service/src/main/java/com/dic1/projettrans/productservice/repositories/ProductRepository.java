@@ -19,7 +19,8 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     Optional<Product> findBySlug(String slug);
 
     // Vendor and tags filters
-    List<Product> findByVendorId(String vendorId);
+    List<Product> findByVendorId(Long vendorId);
+    long countByStock(Integer stock);
     List<Product> findByTagsIn(List<String> tags);
 
     // Rating and condition filters

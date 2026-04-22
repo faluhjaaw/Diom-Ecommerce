@@ -21,4 +21,7 @@ public interface ProductService {
     List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max);
     List<ProductAllDTO> filterByRating(Double minRating);
     List<ProductAllDTO> filterByCondition(ProductCondition condition);
+    ProductDTO decrementStock(String id, int quantity);
+    List<ProductAllDTO> listByVendor(Long vendorId);
+    java.util.Map<String, Long> getStats();
 }

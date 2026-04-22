@@ -24,36 +24,39 @@ public class UtilisateurController {
         if (user.getRole() == null) {
             user.setRole(Role.CUSTOMER);
         }
+        user.setActive(true);
         Utilisateur saved = utilisateurRepository.save(user);
         return ResponseEntity.created(URI.create("/api/users/" + saved.getId())).body(saved);
     }
 
     @GetMapping
     public List<Utilisateur> findAll() {
-        return utilisateurRepository.findAll();
+        return utilisateurRepository.findByActiveTrue();
     }
 
     @GetMapping("/id/{id}")
     public ResponseEntity<Utilisateur> findById(@PathVariable Long id) {
-        return utilisateurRepository.findById(id)
+        return utilisateurRepository.findByIdAndActiveTrue(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/email/{email:.+}")
     public ResponseEntity<Utilisateur> findByEmail(@PathVariable String email) {
-        return utilisateurRepository.findByEmail(email)
+        return utilisateurRepository.findByEmailAndActiveTrue(email)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/id/{id}")
     public ResponseEntity<Utilisateur> update(@PathVariable Long id, @RequestBody Utilisateur incoming) {
-        return utilisateurRepository.findById(id)
+        return utilisateurRepository.findByIdAndActiveTrue(id)
                 .map(existing -> {
                     existing.setNom(incoming.getNom());
+                    existing.setPrenom(incoming.getPrenom());
                     existing.setEmail(incoming.getEmail());
                     existing.setTelephone(incoming.getTelephone());
+                    existing.setAdresse(incoming.getAdresse());
                     if (incoming.getMotDePasse() != null && !incoming.getMotDePasse().isEmpty()) {
                         existing.setMotDePasse(incoming.getMotDePasse());
                     }
@@ -63,10 +66,26 @@ public class UtilisateurController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // Désactivation (soft delete)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (!utilisateurRepository.existsById(id)) return ResponseEntity.notFound().build();
-        utilisateurRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
+        return utilisateurRepository.findById(id)
+                .map(user -> {
+                    user.setActive(false);
+                    utilisateurRepository.save(user);
+                    return ResponseEntity.noContent().<Void>build();
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Réactivation
+    @PatchMapping("/{id}/reactivate")
+    public ResponseEntity<Utilisateur> reactivate(@PathVariable Long id) {
+        return utilisateurRepository.findById(id)
+                .map(user -> {
+                    user.setActive(true);
+                    return ResponseEntity.ok(utilisateurRepository.save(user));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 }

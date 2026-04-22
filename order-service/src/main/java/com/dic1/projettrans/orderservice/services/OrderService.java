@@ -5,6 +5,7 @@ import com.dic1.projettrans.orderservice.dto.OrderDTO;
 import com.dic1.projettrans.orderservice.entities.OrderStatus;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface OrderService {
@@ -17,4 +18,6 @@ public interface OrderService {
     boolean delete(String id);
     boolean hasUserOrderedProduct(Long userId, String productId);
     OrderDTO createFromCart(String cartId, Long userId, String paymentMethod);
+    List<OrderDTO> listByVendor(Long vendorId);
+    Map<String, Long> getStats();
 }

@@ -43,11 +43,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public boolean checkMail(MailCheckDTO mailCheckDTO) {
-        OtpCheck verified = customerClient.verifyOTP(mailCheckDTO.getEmail(), mailCheckDTO.getCode());
-        if (!verified.isValid()) {
-            throw new RuntimeException("OTP invalide ou expiré");
-        }
-        return true;
+        OtpCheck verified = customerClient.verifyOTP(mailCheckDTO.getEmail(), mailCheckDTO.getOtp());
+        return verified != null && verified.isValid();
     }
 
     /**

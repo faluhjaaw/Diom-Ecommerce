@@ -45,6 +45,7 @@ public class SpecificationDTO {
     @AllArgsConstructor
     @Builder
     public static class SpecificationFilterRequest {
+        private String categoryId;
         private String subCategoryId;
         private List<SpecificationFilter> filters;
     }
@@ -55,7 +56,8 @@ public class SpecificationDTO {
     @Builder
     public static class SpecificationFilter {
         private String name;
-        private String value;
+        // Native JSON type: String, Number, Boolean, or Array (for IN)
+        private Object value;
         private FilterOperation operation;
 
         public enum FilterOperation {

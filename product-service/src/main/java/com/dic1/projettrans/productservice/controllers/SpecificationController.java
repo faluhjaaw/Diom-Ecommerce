@@ -8,6 +8,7 @@ import com.dic1.projettrans.productservice.services.SpecificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,6 +36,7 @@ public class SpecificationController {
     }
 
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/category/{subCategoryId}")
     public ResponseEntity<CategorySpecification> defineSpecifications(
             @PathVariable String subCategoryId,

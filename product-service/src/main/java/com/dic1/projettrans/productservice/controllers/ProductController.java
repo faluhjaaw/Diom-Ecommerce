@@ -8,11 +8,13 @@ import com.dic1.projettrans.productservice.entities.ProductCondition;
 import com.dic1.projettrans.productservice.services.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
@@ -21,12 +23,14 @@ public class ProductController {
 
     private final ProductService productService;
 
+    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
     @PostMapping
     public ResponseEntity<ProductDTO> create(@RequestBody CreateProductDTO dto) {
         ProductDTO created = productService.create(dto);
         return ResponseEntity.created(URI.create("/api/products/" + created.getId())).body(created);
     }
 
+    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> update(@PathVariable String id, @RequestBody UpdateProductDTO dto) {
         return productService.update(id, dto)
@@ -34,6 +38,7 @@ public class ProductController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         boolean deleted = productService.delete(id);
@@ -76,5 +81,22 @@ public class ProductController {
     @GetMapping("/filter/condition")
     public ResponseEntity<List<ProductAllDTO>> filterByCondition(@RequestParam("value") ProductCondition condition) {
         return ResponseEntity.ok(productService.filterByCondition(condition));
+    }
+
+    @PatchMapping("/{id}/decrement-stock")
+    public ResponseEntity<ProductDTO> decrementStock(@PathVariable String id, @RequestParam int quantity) {
+        return ResponseEntity.ok(productService.decrementStock(id, quantity));
+    }
+
+    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
+    @GetMapping("/vendor/{vendorId}")
+    public ResponseEntity<List<ProductAllDTO>> listByVendor(@PathVariable Long vendorId) {
+        return ResponseEntity.ok(productService.listByVendor(vendorId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Long>> getStats() {
+        return ResponseEntity.ok(productService.getStats());
     }
 }

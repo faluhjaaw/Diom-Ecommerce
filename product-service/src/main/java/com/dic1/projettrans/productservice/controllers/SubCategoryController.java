@@ -6,6 +6,7 @@ import com.dic1.projettrans.productservice.dto.UpdateSubCategoryDTO;
 import com.dic1.projettrans.productservice.services.SubCategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -18,12 +19,14 @@ public class SubCategoryController {
 
     private final SubCategoryService subCategoryService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<SubCategoryDTO> create(@RequestBody CreateSubCategoryDTO dto) {
         SubCategoryDTO created = subCategoryService.create(dto);
         return ResponseEntity.created(URI.create("/api/subcategories/" + created.getId())).body(created);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<SubCategoryDTO> update(@PathVariable String id, @RequestBody UpdateSubCategoryDTO dto) {
         return subCategoryService.update(id, dto)
@@ -31,6 +34,7 @@ public class SubCategoryController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         boolean deleted = subCategoryService.delete(id);
