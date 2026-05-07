@@ -16,6 +16,8 @@ import com.dic1.projettrans.orderservice.kafka.OrderEventProducer;
 import com.dic1.projettrans.orderservice.model.Customer;
 import com.dic1.projettrans.orderservice.services.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -95,6 +97,21 @@ public class OrderServiceImpl implements OrderService {
                         + item.getProductId() + " : " + e.getMessage());
             }
         }
+
+        List<String> productIds = saved.getItems().stream()
+                .map(Order.OrderItem::getProductId)
+                .collect(Collectors.toList());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) ? auth.getName() : null;
+        orderEventProducer.publishOrderCreated(
+                OrderCreatedEvent.builder()
+                        .orderId(saved.getId())
+                        .userId(dto.getUserId())
+                        .userEmail(userEmail)
+                        .productIds(productIds)
+                        .build()
+        );
 
         return toDTO(saved);
     }
@@ -246,8 +263,19 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // Publier l'événement Kafka — cart-service videra le panier de façon asynchrone
+        List<String> productIds = saved.getItems().stream()
+                .map(Order.OrderItem::getProductId)
+                .collect(Collectors.toList());
+        Authentication authCtx = SecurityContextHolder.getContext().getAuthentication();
+        String userEmailCtx = (authCtx != null && authCtx.isAuthenticated()
+                && !"anonymousUser".equals(authCtx.getPrincipal())) ? authCtx.getName() : null;
         orderEventProducer.publishOrderCreated(
-                OrderCreatedEvent.builder().orderId(saved.getId()).userId(userId).build()
+                OrderCreatedEvent.builder()
+                        .orderId(saved.getId())
+                        .userId(userId)
+                        .userEmail(userEmailCtx)
+                        .productIds(productIds)
+                        .build()
         );
         return toDTO(saved);
     }

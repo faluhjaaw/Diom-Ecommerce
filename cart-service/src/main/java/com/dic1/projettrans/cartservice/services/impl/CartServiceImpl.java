@@ -7,13 +7,18 @@ import com.dic1.projettrans.cartservice.dto.UpdateItemQuantityDTO;
 import com.dic1.projettrans.cartservice.entities.Cart;
 import com.dic1.projettrans.cartservice.feign.CustomerServiceRestClient;
 import com.dic1.projettrans.cartservice.feign.ProductServiceRestClient;
+import com.dic1.projettrans.cartservice.kafka.CartEventProducer;
+import com.dic1.projettrans.cartservice.kafka.CartItemAddedEvent;
 import com.dic1.projettrans.cartservice.model.Product;
 import com.dic1.projettrans.cartservice.repositories.CartRepository;
 import com.dic1.projettrans.cartservice.services.CartService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +31,7 @@ public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final ProductServiceRestClient productClient;
     private final CustomerServiceRestClient customerClient;
+    private final CartEventProducer cartEventProducer;
 
     @Override
     public CartDTO getOrCreateCart(Long userId) {
@@ -98,6 +104,18 @@ public class CartServiceImpl implements CartService {
         }
         recalcTotal(cart);
         Cart saved = cartRepository.save(cart);
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = (auth != null && auth.isAuthenticated()
+                && !"anonymousUser".equals(auth.getPrincipal())) ? auth.getName() : null;
+
+        cartEventProducer.publishCartItemAdded(CartItemAddedEvent.builder()
+                .userId(userId)
+                .userEmail(userEmail)
+                .productId(dto.getProductId())
+                .timestamp(Instant.now())
+                .build());
+
         return toDTO(saved);
     }
 

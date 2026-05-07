@@ -1,0 +1,26 @@
+version: "3.9"
+
+# Infrastructure locale pour le développement du recommendation-service.
+# Lance uniquement MongoDB et Redis — le service Python tourne directement en local.
+#
+# Usage :
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: reco-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - reco_mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: reco-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  reco_mongo_data:

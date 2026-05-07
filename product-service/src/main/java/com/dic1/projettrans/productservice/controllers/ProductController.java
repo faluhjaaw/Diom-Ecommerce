@@ -5,14 +5,20 @@ import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ProductDTO;
 import com.dic1.projettrans.productservice.dto.UpdateProductDTO;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
+import com.dic1.projettrans.productservice.kafka.ProductCatalogEvent;
+import com.dic1.projettrans.productservice.kafka.ProductEventProducer;
+import com.dic1.projettrans.productservice.kafka.ProductViewedEvent;
 import com.dic1.projettrans.productservice.services.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -22,11 +28,13 @@ import java.util.Map;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductEventProducer productEventProducer;
 
     @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
     @PostMapping
     public ResponseEntity<ProductDTO> create(@RequestBody CreateProductDTO dto) {
         ProductDTO created = productService.create(dto);
+        productEventProducer.publishProductCreated(toCatalogEvent("created", created));
         return ResponseEntity.created(URI.create("/api/products/" + created.getId())).body(created);
     }
 
@@ -34,7 +42,10 @@ public class ProductController {
     @PutMapping("/{id}")
     public ResponseEntity<ProductDTO> update(@PathVariable String id, @RequestBody UpdateProductDTO dto) {
         return productService.update(id, dto)
-                .map(ResponseEntity::ok)
+                .map(updated -> {
+                    productEventProducer.publishProductUpdated(toCatalogEvent("updated", updated));
+                    return ResponseEntity.ok(updated);
+                })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -42,13 +53,25 @@ public class ProductController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable String id) {
         boolean deleted = productService.delete(id);
+        if (deleted) productEventProducer.publishProductDeleted(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductDTO> getById(@PathVariable String id) {
         return productService.getById(id)
-                .map(ResponseEntity::ok)
+                .map(product -> {
+                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+                    if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                        productEventProducer.publishProductViewed(ProductViewedEvent.builder()
+                                .userEmail(auth.getName())
+                                .productId(product.getId())
+                                .subCategoryId(product.getSubCategoryId())
+                                .timestamp(Instant.now())
+                                .build());
+                    }
+                    return ResponseEntity.ok(product);
+                })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -98,5 +121,21 @@ public class ProductController {
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Long>> getStats() {
         return ResponseEntity.ok(productService.getStats());
+    }
+
+    private ProductCatalogEvent toCatalogEvent(String eventType, ProductDTO p) {
+        return ProductCatalogEvent.builder()
+                .eventType(eventType)
+                .id(p.getId())
+                .name(p.getName())
+                .description(p.getDescription())
+                .price(p.getPrice())
+                .subCategoryId(p.getSubCategoryId())
+                .brand(p.getBrand())
+                .tags(p.getTags())
+                .imageUrls(p.getImageUrls())
+                .slug(p.getSlug())
+                .rating(p.getRating())
+                .build();
     }
 }

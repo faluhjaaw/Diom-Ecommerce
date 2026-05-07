@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderEventProducer {
 
-    public static final String ORDER_CREATED_TOPIC = "order.created";
+    public static final String ORDER_CREATED_TOPIC = "user.order_completed";
 
     private final KafkaTemplate<String, OrderCreatedEvent> kafkaTemplate;
 

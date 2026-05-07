@@ -102,6 +102,22 @@ spring:
               - Path=/avis-service/v3/api-docs, /avis-service/swagger-ui/**, /avis-service/swagger-ui.html
             filters:
               - RewritePath=/avis-service/(?<segment>.*), /$\{segment}
+
+          # Recommendation Service - API (direct URL, not Eureka)
+          - id: recommendation-service-api
+            uri: http://localhost:8090
+            predicates:
+              - Path=/recommendation-service/api/**
+            filters:
+              - RewritePath=/recommendation-service/(?<segment>.*), /$\{segment}
+
+          # Recommendation Service - Admin
+          - id: recommendation-service-admin
+            uri: http://localhost:8090
+            predicates:
+              - Path=/recommendation-service/api/admin/**
+            filters:
+              - RewritePath=/recommendation-service/(?<segment>.*), /$\{segment}
 server:
   port: 8080
 

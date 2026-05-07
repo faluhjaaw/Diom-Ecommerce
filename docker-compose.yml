@@ -53,9 +53,18 @@ services:
       KAFKA_LOG_DIRS: /var/lib/kafka/data
     volumes:
       - kafka_data:/var/lib/kafka/data
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: projet-trans-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
 
 volumes:
   mongodb_data:
   mysql_data:
   redis_data:
   kafka_data:
+  qdrant_data:
