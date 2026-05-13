@@ -90,6 +90,11 @@ public class ProductController {
         return ResponseEntity.ok(productService.filterByCategory(categoryId));
     }
 
+    @GetMapping("/filter/subcategory/{subCategoryId}")
+    public ResponseEntity<List<ProductAllDTO>> filterBySubCategory(@PathVariable String subCategoryId) {
+        return ResponseEntity.ok(productService.filterBySubCategory(subCategoryId));
+    }
+
     @GetMapping("/filter/price")
     public ResponseEntity<List<ProductAllDTO>> filterByPrice(@RequestParam("min") BigDecimal min,
                                                           @RequestParam("max") BigDecimal max) {

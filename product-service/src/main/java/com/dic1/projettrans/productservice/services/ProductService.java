@@ -18,6 +18,7 @@ public interface ProductService {
     List<ProductAllDTO> getAll();
     List<ProductAllDTO> searchByName(String query);
     List<ProductAllDTO> filterByCategory(String categoryId);
+    List<ProductAllDTO> filterBySubCategory(String subCategoryId);
     List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max);
     List<ProductAllDTO> filterByRating(Double minRating);
     List<ProductAllDTO> filterByCondition(ProductCondition condition);

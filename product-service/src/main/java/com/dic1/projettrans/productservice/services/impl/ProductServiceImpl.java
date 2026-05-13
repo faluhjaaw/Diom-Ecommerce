@@ -136,6 +136,11 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductAllDTO> filterBySubCategory(String subCategoryId) {
+        return productRepository.findBySubCategoryId(subCategoryId).stream().map(this::toAllDTO).collect(Collectors.toList());
+    }
+
+    @Override
     public List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max) {
         return productRepository.findByPriceBetween(min, max).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
