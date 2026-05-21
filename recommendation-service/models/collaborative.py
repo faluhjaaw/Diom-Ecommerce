@@ -7,6 +7,7 @@ Remplace implicit/ALS par sklearn.decomposition.NMF :
 """
 import asyncio
 import logging
+import random
 from typing import Any
 
 import numpy as np
@@ -96,8 +97,11 @@ async def get_interaction_count(user_id: str) -> int:
     return await db["interactions"].count_documents({"user_id": user_id})
 
 
-async def recommend(user_id: str, limit: int = 10) -> list[dict[str, Any]]:
-    """Retourne les produits recommandés pour un utilisateur (lecture sous verrou)."""
+async def recommend(user_id: str, limit: int = 10, explore_ratio: float = 0.2) -> list[dict[str, Any]]:
+    """Retourne les produits recommandés pour un utilisateur (lecture sous verrou).
+
+    explore_ratio: fraction de résultats aléatoires hors top NMF (diversification).
+    """
     async with _train_lock:
         if _model is None or user_id not in _user_index:
             return []
@@ -107,17 +111,31 @@ async def recommend(user_id: str, limit: int = 10) -> list[dict[str, Any]]:
         item_factors_snap = _item_factors.copy()
         product_ids_snap = list(_product_ids)
 
+    n_exploit = max(1, int(limit * (1 - explore_ratio)))
+    n_explore = limit - n_exploit
+
     def _compute_scores():
         scores = item_factors_snap @ user_vec
-        top_indices = np.argsort(scores)[::-1][:limit]
+        top_indices = np.argsort(scores)[::-1][:n_exploit]
         return [(int(i), float(scores[i])) for i in top_indices]
 
     loop = asyncio.get_event_loop()
     top = await loop.run_in_executor(None, _compute_scores)
 
     results = []
+    seen_indices = set()
     for idx, score in top:
         if idx < len(product_ids_snap):
             results.append({"productId": product_ids_snap[idx], "score": score})
+            seen_indices.add(idx)
+
+    # Exploration: random products outside top NMF
+    if n_explore > 0:
+        explore_pool = [
+            i for i in range(len(product_ids_snap)) if i not in seen_indices
+        ]
+        sample = random.sample(explore_pool, min(n_explore, len(explore_pool)))
+        for idx in sample:
+            results.append({"productId": product_ids_snap[idx], "score": 0.0})
 
     return results

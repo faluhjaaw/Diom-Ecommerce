@@ -125,15 +125,48 @@ async def hybrid(
 
     collab_scores: dict[str, float] = {}
     if interaction_count >= settings.cold_start_threshold:
-        for item in await collaborative.recommend(user_id, limit=limit * 2):
-            collab_scores[item["productId"]] = item["score"]
+        raw_collab = await collaborative.recommend(user_id, limit=limit * 2)
+        if raw_collab:
+            max_c = max(item["score"] for item in raw_collab) or 1.0
+            for item in raw_collab:
+                collab_scores[item["productId"]] = item["score"] / max_c
 
+    # Cold-start diversification: mix category-specific + global popularity
     pop_scores: dict[str, float] = {}
-    popular_raw = await get_popular(limit=limit * 2)
-    if popular_raw:
-        pop_max = popular_raw[0]["score"] or 1.0
-        for item in popular_raw:
-            pop_scores[item["productId"]] = item["score"] / pop_max
+    sub_cat: str | None = None
+    if product_id:
+        from db import get_qdrant
+        from models.embedder import _to_qdrant_id
+        import asyncio as _asyncio
+        loop = _asyncio.get_event_loop()
+        pts = await loop.run_in_executor(
+            None,
+            lambda: get_qdrant().retrieve(
+                collection_name=settings.qdrant_collection,
+                ids=[_to_qdrant_id(product_id)],
+                with_payload=True,
+            ),
+        )
+        if pts:
+            sub_cat = pts[0].payload.get("subCategoryId")
+
+    popular_global = await get_popular(limit=limit * 2)
+    popular_cat = await get_popular(category_id=sub_cat, limit=limit * 2) if sub_cat else []
+
+    def _merge_popular(cat_list, global_list, cat_weight=0.6):
+        merged: dict[str, float] = {}
+        if global_list:
+            g_max = global_list[0]["score"] or 1.0
+            for item in global_list:
+                merged[item["productId"]] = (1 - cat_weight) * item["score"] / g_max
+        if cat_list:
+            c_max = cat_list[0]["score"] or 1.0
+            for item in cat_list:
+                pid = item["productId"]
+                merged[pid] = merged.get(pid, 0.0) + cat_weight * item["score"] / c_max
+        return merged
+
+    pop_scores = _merge_popular(popular_cat, popular_global)
 
     all_ids = set(semantic_scores) | set(collab_scores) | set(pop_scores)
     ranked = [

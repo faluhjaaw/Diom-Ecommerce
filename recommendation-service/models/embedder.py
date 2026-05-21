@@ -32,11 +32,27 @@ def load_model():
 
 
 def _build_text(product: dict) -> str:
+    # Brand stripped from name and tags — shared brand across unrelated categories
+    # (Samsung phone vs Samsung fridge) would inflate cosine similarity.
+    import re
+    brand = product.get("brand", "")
+    brand_pattern = re.compile(re.escape(brand), re.IGNORECASE) if brand else None
+
+    name = product.get("name", "")
+    description = product.get("description", "")
+    if brand_pattern:
+        name = brand_pattern.sub("", name).strip()
+        description = brand_pattern.sub("", description).strip()
+
+    tags = [
+        t for t in (product.get("tags", []) or [])
+        if not (brand and t.lower() == brand.lower())
+    ]
+
     parts = [
-        product.get("name", ""),
-        product.get("description", ""),
-        product.get("brand", ""),
-        " ".join(product.get("tags", []) or []),
+        name,
+        description,
+        " ".join(tags),
     ]
     return " ".join(p for p in parts if p)
 
@@ -90,7 +106,14 @@ def _sync_index_batch(products: list[dict]):
 
 
 def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> list[dict[str, Any]]:
-    """Recherche cosine dans Qdrant (sync, doit tourner dans executor)."""
+    """Recherche cosine dans Qdrant avec re-ranking sémantique + qualité.
+
+    Scoring final :
+        score = cosine * category_boost * rating_boost * price_penalty
+    - category_boost : ×1.2 si même subCategoryId, ×1.0 sinon
+    - rating_boost   : 1 + rating/10 si rating présent, ×1.0 sinon
+    - price_penalty  : ×0.7 si hors ±price_range_pct, ×1.0 sinon (souple, pas d'élimination)
+    """
     qdrant = get_qdrant()
 
     results = qdrant.retrieve(
@@ -104,55 +127,59 @@ def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> l
     source = results[0]
     source_vector = source.vector
     source_price = source.payload.get("price", 0)
+    source_sub_cat = source.payload.get("subCategoryId")
 
-    query_filter = None
-    sub_cat = source.payload.get("subCategoryId")
-    if sub_cat:
-        query_filter = Filter(
-            must=[FieldCondition(key="subCategoryId", match=MatchValue(value=sub_cat))]
-        )
-
-    hits = qdrant.search(
+    # Fetch large pool sans filtre dur — re-rank ensuite
+    candidates = qdrant.search(
         collection_name=settings.qdrant_collection,
         query_vector=source_vector,
-        query_filter=query_filter,
-        limit=limit + 5,
+        limit=limit * 4,
         with_payload=True,
     )
 
     qdrant_source_id = _to_qdrant_id(product_id)
-    similar = []
-    for hit in hits:
+    scored = []
+    for hit in candidates:
         if str(hit.id) == qdrant_source_id:
             continue
-        hit_price = hit.payload.get("price", 0)
+
+        payload = hit.payload
+        cosine = hit.score
+
+        # Category boost/penalty (soft)
+        # Penalty applies whenever source has a category and hit doesn't match
+        # (including hits with no subCategoryId at all)
+        hit_sub_cat = payload.get("subCategoryId")
+        same_cat = source_sub_cat and hit_sub_cat == source_sub_cat
+        if same_cat:
+            category_boost = 1.2
+        elif source_sub_cat and hit_sub_cat != source_sub_cat:
+            category_boost = 0.15  # strong cross-category penalty
+        else:
+            category_boost = 1.0
+
+        # Rating boost
+        rating = payload.get("rating")
+        rating_boost = (1.0 + float(rating) / 10.0) if rating else 1.0
+
+        # Price penalty (soft — pas d'élimination)
+        hit_price = payload.get("price", 0)
+        price_penalty = 1.0
         if source_price > 0 and hit_price > 0:
             ratio = hit_price / source_price
             if not (1 - price_range_pct <= ratio <= 1 + price_range_pct):
-                continue
-        orig_id = hit.payload.get("productId", str(hit.id))
-        similar.append({"productId": orig_id, "score": hit.score, **hit.payload})
-        if len(similar) >= limit:
-            break
+                price_penalty = 0.7
 
-    # Fallback sans filtre prix si résultats insuffisants
-    if len(similar) < limit // 2 and query_filter is not None:
-        hits_no_filter = qdrant.search(
-            collection_name=settings.qdrant_collection,
-            query_vector=source_vector,
-            limit=limit + 5,
-            with_payload=True,
+        final_score = cosine * category_boost * rating_boost * price_penalty
+        orig_id = payload.get("productId", str(hit.id))
+        logger.debug(
+            "SCORE pid=%s name=%s subCat=%s cosine=%.4f cat_boost=%.1f final=%.4f",
+            orig_id, payload.get("name"), hit_sub_cat, cosine, category_boost, final_score,
         )
-        seen = {s["productId"] for s in similar}
-        for hit in hits_no_filter:
-            orig_id = hit.payload.get("productId", str(hit.id))
-            if str(hit.id) == qdrant_source_id or orig_id in seen:
-                continue
-            similar.append({"productId": orig_id, "score": hit.score, **hit.payload})
-            if len(similar) >= limit:
-                break
+        scored.append({"productId": orig_id, "score": round(final_score, 4), **payload})
 
-    return similar
+    scored.sort(key=lambda x: x["score"], reverse=True)
+    return scored[:limit]
 
 
 # ---------------------------------------------------------------------------
@@ -180,20 +207,39 @@ async def find_similar_async(
 async def index_all_products():
     """
     Récupère tous les produits du product-service et les indexe dans Qdrant.
-    Traitement par batch de 64 pour exploiter le batch encoding de sentence-transformers.
+    Fetch la liste pour avoir les IDs, puis récupère le détail de chaque produit
+    (la route /api/products/{id} retourne subCategoryId contrairement à la liste).
+    Traitement par batch de 64 pour exploiter le batch encoding.
     """
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             resp = await client.get(f"{settings.product_service_url}/api/products")
             resp.raise_for_status()
-            products = resp.json()
+            product_list = resp.json()
         except Exception as exc:
             logger.warning("Impossible de récupérer les produits pour l'indexation : %s", exc)
             return
 
-    if not products:
+    if not product_list:
         logger.info("Aucun produit à indexer.")
         return
+
+    # Fetch détail de chaque produit pour avoir subCategoryId, tags, brand, etc.
+    products = []
+    async with httpx.AsyncClient(timeout=10) as client:
+        for item in product_list:
+            pid = item.get("id")
+            if not pid:
+                continue
+            try:
+                r = await client.get(f"{settings.product_service_url}/api/products/{pid}")
+                if r.status_code == 200:
+                    products.append(r.json())
+                else:
+                    products.append(item)  # fallback sur données partielles
+            except Exception as exc:
+                logger.warning("Détail produit %s inaccessible : %s", pid, exc)
+                products.append(item)
 
     loop = asyncio.get_event_loop()
     batch_size = 64
@@ -207,7 +253,7 @@ async def index_all_products():
         except Exception as exc:
             logger.warning("Erreur indexation batch [%d:%d] : %s", i, i + batch_size, exc)
 
-    logger.info("%d / %d produits indexés dans Qdrant.", total, len(products))
+    logger.info("%d / %d produits indexés dans Qdrant.", total, len(product_list))
 
 
 # Alias conservé pour le consumer product_catalog (appelé via embed_and_index_product_async)
