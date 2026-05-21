@@ -14,7 +14,7 @@ from qdrant_client.models import PointIdsList
 
 from config import settings
 from db import get_qdrant
-from models.embedder import embed_and_index_product_async
+from models.embedder import embed_and_index_product_async, _to_qdrant_id
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ async def consume_product_catalog():
                         None,
                         lambda: get_qdrant().delete(
                             collection_name=settings.qdrant_collection,
-                            points_selector=PointIdsList(points=[product_id]),
+                            points_selector=PointIdsList(points=[_to_qdrant_id(product_id)]),
                         ),
                     )
                     logger.info("Produit %s supprimé de Qdrant.", product_id)

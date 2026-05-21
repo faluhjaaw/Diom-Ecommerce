@@ -40,6 +40,8 @@ _redis: aioredis.Redis | None = None
 
 
 def get_redis() -> aioredis.Redis:
+    if _redis is None:
+        raise RuntimeError("Redis not connected — call connect_redis() first")
     return _redis
 
 

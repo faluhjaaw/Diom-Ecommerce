@@ -10,7 +10,7 @@ from aiokafka import AIOKafkaConsumer
 
 from config import settings
 from db import get_mongo_db
-from models.embedder import embed_and_index_product_async
+from models.embedder import embed_and_index_product_async, _to_qdrant_id
 from db import get_qdrant
 
 logger = logging.getLogger(__name__)
@@ -24,7 +24,7 @@ async def _ensure_product_indexed(product_id: str):
         None,
         lambda: get_qdrant().retrieve(
             collection_name=settings.qdrant_collection,
-            ids=[product_id],
+            ids=[_to_qdrant_id(product_id)],
         ),
     )
     if existing:

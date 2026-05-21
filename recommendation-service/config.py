@@ -13,7 +13,6 @@ class Settings(BaseSettings):
     # Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
-    redis_ttl_seconds: int = 900  # 15 min
 
     # Qdrant
     qdrant_host: str = "localhost"
