@@ -8,10 +8,10 @@ import java.util.Optional;
 
 public interface AvisRepository extends MongoRepository<Avis, String> {
 
-    // Lister les avis d'un produit
     List<Avis> findByProduitId(String produitId);
 
-    // Lister les avis d'un utilisateur
     List<Avis> findByUserId(Long userId);
+
+    boolean existsByUserIdAndProduitId(Long userId, String produitId);
 
 }

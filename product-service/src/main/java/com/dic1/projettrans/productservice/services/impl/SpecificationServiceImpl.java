@@ -114,8 +114,8 @@ public class SpecificationServiceImpl implements SpecificationService {
             }
 
             if (product.getSpecifications().containsKey(specDef.getName())) {
-                SpecificationValue specValue = product.getSpecifications().get(specDef.getName());
-                if (specValue.getValue() == null || !validateSpecificationValue(specValue.getValue(), specValue.getType(), specDef)) {
+                String specValue = product.getSpecifications().get(specDef.getName());
+                if (specValue == null || specValue.isBlank()) {
                     return false;
                 }
             }

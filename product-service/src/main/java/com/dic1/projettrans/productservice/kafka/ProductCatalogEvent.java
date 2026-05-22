@@ -1,5 +1,6 @@
 package com.dic1.projettrans.productservice.kafka;
 
+import com.dic1.projettrans.productservice.entities.ListingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,4 +30,5 @@ public class ProductCatalogEvent {
     private List<String> imageUrls;
     private String slug;
     private Double rating;
+    private ListingStatus status;
 }

@@ -10,6 +10,7 @@ import com.dic1.projettrans.productservice.kafka.ProductEventProducer;
 import com.dic1.projettrans.productservice.kafka.ProductViewedEvent;
 import com.dic1.projettrans.productservice.services.ProductService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -30,18 +31,22 @@ public class ProductController {
     private final ProductService productService;
     private final ProductEventProducer productEventProducer;
 
-    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<ProductDTO> create(@RequestBody CreateProductDTO dto) {
-        ProductDTO created = productService.create(dto);
+    public ResponseEntity<ProductDTO> create(@Valid @RequestBody CreateProductDTO dto, Authentication authentication) {
+        String sellerEmail = authentication.getName();
+        ProductDTO created = productService.create(dto, sellerEmail);
         productEventProducer.publishProductCreated(toCatalogEvent("created", created));
         return ResponseEntity.created(URI.create("/api/products/" + created.getId())).body(created);
     }
 
-    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> update(@PathVariable String id, @RequestBody UpdateProductDTO dto) {
-        return productService.update(id, dto)
+    public ResponseEntity<ProductDTO> update(@PathVariable String id, @Valid @RequestBody UpdateProductDTO dto, Authentication authentication) {
+        String callerEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return productService.update(id, dto, callerEmail, isAdmin)
                 .map(updated -> {
                     productEventProducer.publishProductUpdated(toCatalogEvent("updated", updated));
                     return ResponseEntity.ok(updated);
@@ -49,10 +54,41 @@ public class ProductController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/{id}/sold")
+    public ResponseEntity<ProductDTO> markAsSold(@PathVariable String id, Authentication authentication) {
+        String callerEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return productService.markAsSold(id, callerEmail, isAdmin)
+                .map(updated -> {
+                    productEventProducer.publishProductUpdated(toCatalogEvent("updated", updated));
+                    return ResponseEntity.ok(updated);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<ProductDTO> archiveListing(@PathVariable String id, Authentication authentication) {
+        String callerEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        return productService.archiveListing(id, callerEmail, isAdmin)
+                .map(updated -> {
+                    productEventProducer.publishProductUpdated(toCatalogEvent("updated", updated));
+                    return ResponseEntity.ok(updated);
+                })
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable String id) {
-        boolean deleted = productService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable String id, Authentication authentication) {
+        String callerEmail = authentication.getName();
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean deleted = productService.delete(id, callerEmail, isAdmin);
         if (deleted) productEventProducer.publishProductDeleted(id);
         return deleted ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
@@ -116,10 +152,21 @@ public class ProductController {
         return ResponseEntity.ok(productService.decrementStock(id, quantity));
     }
 
-    @PreAuthorize("hasAnyRole('VENDEUR', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/vendor/{vendorId}")
     public ResponseEntity<List<ProductAllDTO>> listByVendor(@PathVariable Long vendorId) {
         return ResponseEntity.ok(productService.listByVendor(vendorId));
+    }
+
+    @PreAuthorize("isAuthenticated()")
+    @GetMapping("/my")
+    public ResponseEntity<List<ProductAllDTO>> listMyListings(Authentication authentication) {
+        return ResponseEntity.ok(productService.listBySellerEmail(authentication.getName()));
+    }
+
+    @GetMapping("/filter/location/{location}")
+    public ResponseEntity<List<ProductAllDTO>> filterByLocation(@PathVariable String location) {
+        return ResponseEntity.ok(productService.filterByLocation(location));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -141,6 +188,7 @@ public class ProductController {
                 .imageUrls(p.getImageUrls())
                 .slug(p.getSlug())
                 .rating(p.getRating())
+                .status(p.getStatus())
                 .build();
     }
 }

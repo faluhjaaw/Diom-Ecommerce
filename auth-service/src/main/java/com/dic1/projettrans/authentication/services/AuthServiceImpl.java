@@ -3,10 +3,12 @@ package com.dic1.projettrans.authentication.services;
 import com.dic1.projettrans.authentication.dto.*;
 import com.dic1.projettrans.authentication.entities.User;
 import com.dic1.projettrans.authentication.feign.CustomerServiceRestClient;
+import com.dic1.projettrans.authentication.model.CredentialRequest;
 import com.dic1.projettrans.authentication.model.CustomerUser;
 import com.dic1.projettrans.authentication.model.Otp;
 import com.dic1.projettrans.authentication.model.OtpCheck;
 import com.dic1.projettrans.authentication.repositories.UserRepository;
+import feign.FeignException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,17 +30,14 @@ public class AuthServiceImpl implements AuthService {
         try {
             user = customerClient.findUserByEmail(email);
         } catch (Exception e) {
-            System.out.println("Utilisateur introuvable !");
+            // user not found — continue to OTP generation
         }
 
         if(user != null) {
             throw new RuntimeException("Un utilisateur avec cet email existe déjà");
         }
 
-        Otp otp = customerClient.generateOTP(email);
-
-        System.out.println("============================================================");
-        System.out.println("Code OTP pour " + email + ": " + otp.getOtp());
+        customerClient.generateOTP(email);
     }
 
     @Override
@@ -71,15 +70,15 @@ public class AuthServiceImpl implements AuthService {
      */
     @Override
     public boolean loginUser(LoginDTO loginDTO) {
-        // Use customer-service data to authenticate
-        CustomerUser user;
         try {
-            user = customerClient.findUserByEmail(loginDTO.getEmail());
+            var resp = customerClient.verifyCredentials(
+                    new CredentialRequest(loginDTO.getEmail(), loginDTO.getPassword()));
+            return resp != null && Boolean.TRUE.equals(
+                    resp.getBody() != null ? resp.getBody().get("valid") : false);
+        } catch (FeignException.Unauthorized | FeignException.BadRequest e) {
+            return false;
         } catch (Exception e) {
             throw new RuntimeException("Service client indisponible");
         }
-
-        String hashed = user.getMotDePasse();
-        return hashed != null && passwordEncoder.matches(loginDTO.getPassword(), hashed);
     }
 }

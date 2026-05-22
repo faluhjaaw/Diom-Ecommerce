@@ -1,11 +1,9 @@
 package com.dic1.projettrans.avisservice.services.impl;
 
 import com.dic1.projettrans.avisservice.entities.Avis;
-import com.dic1.projettrans.avisservice.feign.OrderServiceClient;
 import com.dic1.projettrans.avisservice.repositories.AvisRepository;
 import com.dic1.projettrans.avisservice.services.AvisService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,18 +15,15 @@ import java.util.Optional;
 public class AvisServiceImpl implements AvisService {
 
     private final AvisRepository avisRepository;
-    private final OrderServiceClient  orderServiceClient;
-
 
     @Override
     public Avis ajouterAvis(Avis avis) {
-        // Vérifie si l'utilisateur a commandé le produit
-        boolean hasOrdered = orderServiceClient.hasUserOrderedProduct(avis.getUserId(), avis.getProduitId());
-        if (!hasOrdered) {
-            throw new RuntimeException("L'utilisateur n'a pas commandé ce produit, il ne peut pas laisser d'avis.");
+        if (avis.getNote() == null || avis.getNote() < 1 || avis.getNote() > 5) {
+            throw new IllegalArgumentException("La note doit être comprise entre 1 et 5.");
         }
-
-        // Remplit la date automatiquement
+        if (avisRepository.existsByUserIdAndProduitId(avis.getUserId(), avis.getProduitId())) {
+            throw new IllegalStateException("Vous avez déjà laissé un avis pour ce produit.");
+        }
         avis.setDate(LocalDateTime.now());
         return avisRepository.save(avis);
     }

@@ -1,6 +1,6 @@
 package com.dic1.projettrans.productservice.dto;
 
-import com.dic1.projettrans.productservice.entities.Product;
+import com.dic1.projettrans.productservice.entities.ListingStatus;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,14 +23,18 @@ public class ProductDTO {
     private BigDecimal price;
     private Integer stock;
     private String subCategoryId;
-    private Long vendorId;
     private String brand;
     private List<String> imageUrls;
     private List<String> tags;
     private ProductCondition condition;
     private Double rating;
-    private Map<String, Product.SpecificationValue> specifications;
+    private Map<String, String> specifications;
     private String slug;
     private Instant createdAt;
     private Instant updatedAt;
+    private String location;
+    private boolean negotiable;
+    private String contactPhone;
+    private String sellerEmail;
+    private ListingStatus status;
 }

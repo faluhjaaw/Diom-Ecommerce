@@ -1,5 +1,6 @@
 package com.dic1.projettrans.customerservice.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +21,7 @@ public class Utilisateur {
     private String nom;
     private String email;
     private String telephone;
+    @JsonIgnore
     private String motDePasse;
     private String adresse;
 

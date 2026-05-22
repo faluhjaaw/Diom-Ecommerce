@@ -30,7 +30,7 @@ public class TokenServiceImpl implements TokenService {
                 .withSubject(loginDTO.getEmail())
                 .withClaim("role", role)
                 .withIssuedAt(new Date())
-                //.withExpiresAt(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 heure
+                .withExpiresAt(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24)) // 24h
                 .sign(Algorithm.HMAC256(jwtSecret));
     }
 }

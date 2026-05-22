@@ -35,9 +35,6 @@ public class OtpServiceImpl implements OtpService {
 
         String code = String.format("%06d", random.nextInt(1_000_000));
 
-        System.out.println("============================================================");
-        System.out.println("Code OTP pour " + email + ": " + code);
-
         LocalDateTime now = LocalDateTime.now();
         Otp otp = new Otp();
         otp.setEmail(normalized);

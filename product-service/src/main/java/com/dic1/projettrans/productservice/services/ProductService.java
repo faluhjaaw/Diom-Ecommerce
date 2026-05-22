@@ -11,9 +11,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductService {
-    ProductDTO create(CreateProductDTO dto);
-    Optional<ProductDTO> update(String id, UpdateProductDTO dto);
-    boolean delete(String id);
+    ProductDTO create(CreateProductDTO dto, String sellerEmail);
+    Optional<ProductDTO> update(String id, UpdateProductDTO dto, String callerEmail, boolean isAdmin);
+    boolean delete(String id, String callerEmail, boolean isAdmin);
+    Optional<ProductDTO> markAsSold(String id, String callerEmail, boolean isAdmin);
+    Optional<ProductDTO> archiveListing(String id, String callerEmail, boolean isAdmin);
     Optional<ProductDTO> getById(String id);
     List<ProductAllDTO> getAll();
     List<ProductAllDTO> searchByName(String query);
@@ -24,5 +26,7 @@ public interface ProductService {
     List<ProductAllDTO> filterByCondition(ProductCondition condition);
     ProductDTO decrementStock(String id, int quantity);
     List<ProductAllDTO> listByVendor(Long vendorId);
+    List<ProductAllDTO> listBySellerEmail(String sellerEmail);
+    List<ProductAllDTO> filterByLocation(String location);
     java.util.Map<String, Long> getStats();
 }

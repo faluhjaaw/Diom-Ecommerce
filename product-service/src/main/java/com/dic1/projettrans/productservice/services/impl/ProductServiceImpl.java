@@ -4,6 +4,7 @@ import com.dic1.projettrans.productservice.dto.CreateProductDTO;
 import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ProductDTO;
 import com.dic1.projettrans.productservice.dto.UpdateProductDTO;
+import com.dic1.projettrans.productservice.entities.ListingStatus;
 import com.dic1.projettrans.productservice.entities.Product;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
 import com.dic1.projettrans.productservice.entities.SubCategory;
@@ -33,28 +34,28 @@ public class ProductServiceImpl implements ProductService {
     private final MongoTemplate mongoTemplate;
 
     @Override
-    public ProductDTO create(CreateProductDTO dto) {
-        // Validate subcategory exists
+    public ProductDTO create(CreateProductDTO dto, String sellerEmail) {
         if (dto.getSubCategoryId() != null) {
             subCategoryRepository.findById(dto.getSubCategoryId())
                     .orElseThrow(() -> new IllegalArgumentException("SubCategory not found: " + dto.getSubCategoryId()));
         }
-        // Build and set fields
         Product product = Product.builder()
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .price(dto.getPrice())
                 .stock(dto.getStock())
                 .subCategoryId(dto.getSubCategoryId())
-                .vendorId(dto.getVendorId())
                 .brand(dto.getBrand())
                 .imageUrls(dto.getImageUrls())
                 .tags(dto.getTags())
                 .condition(dto.getCondition())
-                .rating(dto.getRating())
                 .specifications(dto.getSpecifications())
+                .location(dto.getLocation())
+                .negotiable(dto.isNegotiable())
+                .contactPhone(dto.getContactPhone())
+                .sellerEmail(sellerEmail)
+                .status(ListingStatus.ACTIVE)
                 .build();
-        // Generate unique slug from name if provided
         if (product.getName() != null) {
             String base = slugify(product.getName());
             product.setSlug(ensureUniqueSlug(base, null));
@@ -64,33 +65,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Optional<ProductDTO> update(String id, UpdateProductDTO dto) {
+    public Optional<ProductDTO> update(String id, UpdateProductDTO dto, String callerEmail, boolean isAdmin) {
         return productRepository.findById(id).map(existing -> {
+            if (!isAdmin && callerEmail != null && !callerEmail.equals(existing.getSellerEmail())) {
+                throw new org.springframework.security.access.AccessDeniedException("Not the owner of this listing");
+            }
             boolean nameChanged = false;
             if (dto.getName() != null) { existing.setName(dto.getName()); nameChanged = true; }
             if (dto.getDescription() != null) existing.setDescription(dto.getDescription());
             if (dto.getPrice() != null) existing.setPrice(dto.getPrice());
             if (dto.getStock() != null) existing.setStock(dto.getStock());
             if (dto.getSubCategoryId() != null) {
-                // Validate subcategory exists
                 subCategoryRepository.findById(dto.getSubCategoryId())
                         .orElseThrow(() -> new IllegalArgumentException("SubCategory not found: " + dto.getSubCategoryId()));
                 existing.setSubCategoryId(dto.getSubCategoryId());
             }
-            if (dto.getVendorId() != null) existing.setVendorId(dto.getVendorId());
             if (dto.getBrand() != null) existing.setBrand(dto.getBrand());
             if (dto.getImageUrls() != null) existing.setImageUrls(dto.getImageUrls());
             if (dto.getTags() != null) existing.setTags(dto.getTags());
             if (dto.getCondition() != null) existing.setCondition(dto.getCondition());
-            if (dto.getRating() != null) existing.setRating(dto.getRating());
-            System.out.println("Existing Specifications: {}" + existing.getSpecifications());
+            if (dto.getLocation() != null) existing.setLocation(dto.getLocation());
+            if (dto.getContactPhone() != null) existing.setContactPhone(dto.getContactPhone());
+            existing.setNegotiable(dto.isNegotiable());
 
             if (dto.getSpecifications() != null) {
                 if (existing.getSpecifications() == null) {
-                    System.out.println("DTO Specifications: {}" + dto.getSpecifications());
                     existing.setSpecifications(dto.getSpecifications());
                 } else {
-                    // fusion : on met à jour les clés existantes ou on en ajoute
                     dto.getSpecifications().forEach(existing.getSpecifications()::put);
                 }
             }
@@ -105,10 +106,14 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public boolean delete(String id) {
-        if (!productRepository.existsById(id)) return false;
-        productRepository.deleteById(id);
-        return true;
+    public boolean delete(String id, String callerEmail, boolean isAdmin) {
+        return productRepository.findById(id).map(product -> {
+            if (!isAdmin && !callerEmail.equals(product.getSellerEmail())) {
+                throw new org.springframework.security.access.AccessDeniedException("Not the owner of this listing");
+            }
+            productRepository.deleteById(id);
+            return true;
+        }).orElse(false);
     }
 
     @Override
@@ -118,46 +123,77 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductAllDTO> getAll() {
-        return productRepository.findAll().stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findByStatus(ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> searchByName(String query) {
-        return productRepository.findByNameContainingIgnoreCase(query).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findByNameContainingIgnoreCaseAndStatus(query, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> filterByCategory(String categoryId) {
-        // find all subcategories under the category, then products by those subcategory ids
         List<String> subIds = subCategoryRepository.findByCategoryId(categoryId)
                 .stream().map(SubCategory::getId).collect(Collectors.toList());
         if (subIds.isEmpty()) return List.of();
-        return productRepository.findBySubCategoryIdIn(subIds).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findBySubCategoryIdInAndStatus(subIds, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> filterBySubCategory(String subCategoryId) {
-        return productRepository.findBySubCategoryId(subCategoryId).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findBySubCategoryIdAndStatus(subCategoryId, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> filterByPriceRange(BigDecimal min, BigDecimal max) {
-        return productRepository.findByPriceBetween(min, max).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findByPriceBetweenAndStatus(min, max, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> filterByRating(Double minRating) {
-        return productRepository.findByRatingGreaterThanEqual(minRating).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findByRatingGreaterThanEqualAndStatus(minRating, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> filterByCondition(ProductCondition condition) {
-        return productRepository.findByCondition(condition).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return productRepository.findByConditionAndStatus(condition, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
     }
 
     @Override
     public List<ProductAllDTO> listByVendor(Long vendorId) {
-        return productRepository.findByVendorId(vendorId).stream().map(this::toAllDTO).collect(Collectors.toList());
+        return List.of();
+    }
+
+    @Override
+    public List<ProductAllDTO> filterByLocation(String location) {
+        return productRepository.findByLocationContainingIgnoreCaseAndStatus(location, ListingStatus.ACTIVE).stream().map(this::toAllDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ProductAllDTO> listBySellerEmail(String sellerEmail) {
+        return productRepository.findBySellerEmailOrderByCreatedAtDesc(sellerEmail).stream().map(this::toAllDTO).collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<ProductDTO> markAsSold(String id, String callerEmail, boolean isAdmin) {
+        return productRepository.findById(id).map(product -> {
+            if (!isAdmin && !callerEmail.equals(product.getSellerEmail())) {
+                throw new org.springframework.security.access.AccessDeniedException("Not the owner of this listing");
+            }
+            product.setStatus(ListingStatus.SOLD);
+            return toDTO(productRepository.save(product));
+        });
+    }
+
+    @Override
+    public Optional<ProductDTO> archiveListing(String id, String callerEmail, boolean isAdmin) {
+        return productRepository.findById(id).map(product -> {
+            if (!isAdmin && !callerEmail.equals(product.getSellerEmail())) {
+                throw new org.springframework.security.access.AccessDeniedException("Not the owner of this listing");
+            }
+            product.setStatus(ListingStatus.ARCHIVED);
+            return toDTO(productRepository.save(product));
+        });
     }
 
     @Override
@@ -174,14 +210,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductDTO decrementStock(String id, int quantity) {
-        // Opération atomique : filtre sur stock >= quantity + décrémentation en une seule requête MongoDB
-        // Élimine toute race condition entre requêtes concurrentes
         Query query = new Query(Criteria.where("_id").is(id).and("stock").gte(quantity));
         Update update = new Update().inc("stock", -quantity);
         Product updated = mongoTemplate.findAndModify(
                 query, update, FindAndModifyOptions.options().returnNew(true), Product.class);
         if (updated == null) {
-            // null = produit introuvable OU stock insuffisant
             boolean exists = productRepository.existsById(id);
             if (!exists) throw new IllegalArgumentException("Produit introuvable : " + id);
             throw new IllegalStateException("Stock insuffisant pour le produit " + id);
@@ -198,7 +231,6 @@ public class ProductServiceImpl implements ProductService {
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .subCategoryId(product.getSubCategoryId())
-                .vendorId(product.getVendorId())
                 .brand(product.getBrand())
                 .imageUrls(product.getImageUrls())
                 .tags(product.getTags())
@@ -208,6 +240,11 @@ public class ProductServiceImpl implements ProductService {
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt())
                 .specifications(product.getSpecifications())
+                .location(product.getLocation())
+                .negotiable(product.isNegotiable())
+                .contactPhone(product.getContactPhone())
+                .sellerEmail(product.getSellerEmail())
+                .status(product.getStatus())
                 .build();
     }
 
@@ -221,9 +258,16 @@ public class ProductServiceImpl implements ProductService {
                 .stock(product.getStock())
                 .imageUrls(product.getImageUrls())
                 .rating(product.getRating())
+                .location(product.getLocation())
+                .negotiable(product.isNegotiable())
+                .condition(product.getCondition())
+                .sellerEmail(product.getSellerEmail())
+                .createdAt(product.getCreatedAt())
+                .subCategoryId(product.getSubCategoryId())
+                .slug(product.getSlug())
+                .status(product.getStatus())
                 .build();
     }
-
 
     private String slugify(String input) {
         String s = input.toLowerCase();

@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 import java.util.List;
 
 @RestController
@@ -19,9 +21,15 @@ public class AvisController {
     // Ajouter un avis
     @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
-    public ResponseEntity<Avis> ajouterAvis(@RequestBody Avis avis) {
-        Avis created = avisService.ajouterAvis(avis);
-        return ResponseEntity.ok(created);
+    public ResponseEntity<?> ajouterAvis(@RequestBody Avis avis) {
+        try {
+            Avis created = avisService.ajouterAvis(avis);
+            return ResponseEntity.ok(created);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).body(Map.of("error", e.getMessage()));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     // Modifier un avis

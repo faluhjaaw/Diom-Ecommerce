@@ -118,6 +118,30 @@ spring:
               - Path=/recommendation-service/api/admin/**
             filters:
               - RewritePath=/recommendation-service/(?<segment>.*), /$\{segment}
+
+          # Message Service - API
+          - id: message-service-api
+            uri: lb://message-service
+            predicates:
+              - Path=/message-service/api/**
+            filters:
+              - RewritePath=/message-service/(?<segment>.*), /$\{segment}
+
+          # Message Service - WebSocket
+          - id: message-service-ws
+            uri: lb:ws://message-service
+            predicates:
+              - Path=/message-service/ws/**
+            filters:
+              - RewritePath=/message-service/(?<segment>.*), /$\{segment}
+
+          # Message Service - Swagger
+          - id: message-service-swagger
+            uri: lb://message-service
+            predicates:
+              - Path=/message-service/v3/api-docs, /message-service/swagger-ui/**, /message-service/swagger-ui.html
+            filters:
+              - RewritePath=/message-service/(?<segment>.*), /$\{segment}
 server:
   port: 8080
 

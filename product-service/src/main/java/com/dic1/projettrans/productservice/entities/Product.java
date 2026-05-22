@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// ── Nested types used by CategorySpecification schema (not by product specs field) ──
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -34,36 +36,45 @@ public class Product {
 
     private Integer stock;
 
-    // reference to SubCategory id
     private String subCategoryId;
-
-    // reference to vendor (seller) user id
-    @Indexed
-    private Long vendorId;
 
     private String brand;
 
     private List<String> imageUrls;
 
-    // tags associated with the product (e.g., "smartphone", "5g")
     @Indexed
     private List<String> tags;
 
-    // Etat/condition du produit: NEW(neuf), USED(d'occasion), REFURBISHED(reconditionné)
     private ProductCondition condition;
 
-    // Note/évaluation moyenne (0.0 - 5.0)
+    /** Calculated from avis — never set by client directly */
     private Double rating;
 
-    // Specifications dynamiques du produit (clé/valeur)
-    @Indexed
-    private Map<String, SpecificationValue> specifications = new HashMap<>();
+    /** Simple key/value specifications (e.g. "RAM" -> "8Go") */
+    private Map<String, String> specifications = new HashMap<>();
 
-    // URL-friendly unique slug derived from the name
     @Indexed(unique = true)
     private String slug;
 
-    // Classe interne pour les valeurs de spécification
+    // Marketplace fields
+    private String location;
+    private boolean negotiable;
+    private String contactPhone;
+
+    @Indexed
+    private String sellerEmail;
+
+    @Indexed
+    private ListingStatus status = ListingStatus.ACTIVE;
+
+    @CreatedDate
+    private Instant createdAt;
+
+    @LastModifiedDate
+    private Instant updatedAt;
+
+    // ── Schema/validation inner classes (used by CategorySpecification, not stored here) ──
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -73,14 +84,10 @@ public class Product {
         private SpecificationType type;
 
         public enum SpecificationType {
-            TEXT,
-            NUMBER,
-            BOOLEAN,
-            ENUM
+            TEXT, NUMBER, BOOLEAN, ENUM
         }
     }
 
-    // Classe interne pour la définition des spécifications
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
@@ -92,10 +99,4 @@ public class Product {
         private boolean required;
         private List<String> allowedValues;
     }
-
-    @CreatedDate
-    private Instant createdAt;
-
-    @LastModifiedDate
-    private Instant updatedAt;
 }
