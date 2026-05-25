@@ -103,6 +103,22 @@ spring:
             filters:
               - RewritePath=/avis-service/(?<segment>.*), /$\{segment}
 
+          # Search Service - API
+          - id: search-service-api
+            uri: http://localhost:8088
+            predicates:
+              - Path=/search-service/api/**
+            filters:
+              - RewritePath=/search-service/(?<segment>.*), /$\{segment}
+
+          # Search Service - Swagger
+          - id: search-service-swagger
+            uri: http://localhost:8088
+            predicates:
+              - Path=/search-service/v3/api-docs, /search-service/swagger-ui/**, /search-service/swagger-ui.html
+            filters:
+              - RewritePath=/search-service/(?<segment>.*), /$\{segment}
+
           # Recommendation Service - API (direct URL, not Eureka)
           - id: recommendation-service-api
             uri: http://localhost:8090
