@@ -10,8 +10,6 @@ import logging
 import py_eureka_client.eureka_client as eureka_client
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
 from api.routes import router, admin_router
 from config import settings
 from consumers.cart_added import consume_cart_added
@@ -36,13 +34,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.app_name, version="1.0.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 app.include_router(router)
 app.include_router(admin_router)

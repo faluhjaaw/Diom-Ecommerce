@@ -106,10 +106,11 @@ services:
     ports:
       - "8761:8761"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/eureka/apps || exit 1"]
       interval: 15s
-      timeout: 5s
+      timeout: 10s
       retries: 10
+      start_period: 30s
 
   gateway-service:
     build: ./gateway-service
@@ -136,6 +137,7 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/trans_customer
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: pppp
@@ -153,6 +155,7 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/trans_customer
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: pppp
@@ -172,6 +175,7 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/transversaleProducts
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
 
@@ -188,6 +192,7 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/transversaleAvis
 
   message-service:
@@ -203,6 +208,7 @@ services:
         condition: service_healthy
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka
+      EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/transversaleMessages
 
   # ─────────────────────────────────────────
