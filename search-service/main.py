@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 import py_eureka_client.eureka_client as eureka_client
 from fastapi import FastAPI
 from app.config import settings
+from seed_redis import seed_redis
 from app.routers import search, indexer
 from app.services.embedding_service import load_model
 from app.services.mongo_service import connect_mongo, close_mongo
@@ -35,6 +36,10 @@ async def lifespan(app: FastAPI):
     # 1. Connexions
     connect_mongo()
     connect_redis()
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(
+        None, seed_redis, settings.redis_host, settings.redis_port, settings.MONGODB_URI
+    )
     await init_collection()
     logger.info("Connexions établies (MongoDB, Redis, Qdrant).")
 
