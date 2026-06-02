@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class MailCheckDTO {
-    private String email;
+public class PhoneCheckDTO {
+    private String telephone;
     private String otp;
 }

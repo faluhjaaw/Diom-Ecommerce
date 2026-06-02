@@ -4,10 +4,10 @@ import com.dic1.projettrans.customerservice.entities.Utilisateur;
 import com.dic1.projettrans.customerservice.repositories.UtilisateurRepository;
 import com.dic1.projettrans.customerservice.services.OtpService;
 import com.dic1.projettrans.customerservice.services.UtilisateurService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UtilisateurServiceImpl implements UtilisateurService {
@@ -22,18 +22,23 @@ public class UtilisateurServiceImpl implements UtilisateurService {
     }
 
     @Override
-    public boolean verifyCredentials(String email, String password) {
-        Optional<Utilisateur> opt = utilisateurRepository.findByEmail(email);
-        return opt.filter(u -> u.getMotDePasse() != null && passwordEncoder.matches(password, u.getMotDePasse())).isPresent();
+    public boolean verifyCredentials(String telephone, String password) {
+        return utilisateurRepository.findByTelephoneAndActiveTrue(telephone)
+                .filter(u -> u.getMotDePasse() != null && passwordEncoder.matches(password, u.getMotDePasse()))
+                .isPresent();
     }
 
     @Override
-    public String generateOtpForEmail(String email) {
-        return otpService.generate(email);
+    public String generateOtpForTelephone(String telephone) {
+        if (utilisateurRepository.findByTelephone(telephone).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Un compte existe déjà avec ce numéro de téléphone");
+        }
+        return otpService.generate(telephone);
     }
 
     @Override
-    public boolean verifyOtp(String email, String code) {
-        return otpService.verify(email, code);
+    public boolean verifyOtp(String telephone, String code) {
+        return otpService.verify(telephone, code);
     }
 }

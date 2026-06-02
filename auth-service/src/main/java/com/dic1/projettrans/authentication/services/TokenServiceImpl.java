@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class TokenServiceImpl implements TokenService {
@@ -24,11 +23,12 @@ public class TokenServiceImpl implements TokenService {
 
     @Override
     public String generateToken(LoginDTO loginDTO) {
-        CustomerUser user = customerClient.findUserByEmail(loginDTO.getEmail());
+        CustomerUser user = customerClient.findUserByTelephone(loginDTO.getTelephone());
         String role = user.getRole() != null ? user.getRole().name() : "CUSTOMER";
         return JWT.create()
-                .withSubject(loginDTO.getEmail())
+                .withSubject(user.getEmail())
                 .withClaim("role", role)
+                .withClaim("userId", user.getId())
                 .withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24)) // 24h
                 .sign(Algorithm.HMAC256(jwtSecret));

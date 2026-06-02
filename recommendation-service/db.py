@@ -52,6 +52,7 @@ async def connect_redis():
         port=settings.redis_port,
         decode_responses=True,
     )
+    await _redis.ping()  # échoue vite si Redis est unreachable
 
 
 async def close_redis():
@@ -66,6 +67,8 @@ _qdrant: QdrantClient | None = None
 
 
 def get_qdrant() -> QdrantClient:
+    if _qdrant is None:
+        raise RuntimeError("Qdrant not connected — call connect_qdrant() first")
     return _qdrant
 
 

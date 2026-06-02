@@ -20,6 +20,7 @@ public class Utilisateur {
     private String prenom;
     private String nom;
     private String email;
+    @Column(unique = true)
     private String telephone;
     @JsonIgnore
     private String motDePasse;
@@ -27,6 +28,10 @@ public class Utilisateur {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "seller_type", length = 20)
+    private SellerType sellerType = SellerType.CUSTOMER;
 
     @Column(nullable = false)
     private boolean active = true;

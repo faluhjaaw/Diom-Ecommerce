@@ -5,6 +5,9 @@ import com.dic1.projettrans.productservice.entities.Product;
 import com.dic1.projettrans.productservice.entities.ProductCondition;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
@@ -41,4 +44,7 @@ public interface ProductRepository extends MongoRepository<Product, String> {
     List<Product> findByConditionAndStatus(ProductCondition condition, ListingStatus status);
     List<Product> findByLocationContainingIgnoreCaseAndStatus(String location, ListingStatus status);
     List<Product> findBySellerEmailOrderByCreatedAtDesc(String sellerEmail);
+
+    // Shop queries
+    Page<Product> findByShopIdAndStatus(String shopId, ListingStatus status, Pageable pageable);
 }

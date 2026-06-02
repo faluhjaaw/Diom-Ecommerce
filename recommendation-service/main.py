@@ -12,8 +12,6 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from api.routes import router, admin_router
 from config import settings
-from consumers.cart_added import consume_cart_added
-from consumers.order_completed import consume_order_completed
 from consumers.product_catalog import consume_product_catalog
 from consumers.product_viewed import consume_product_viewed
 from db import (
@@ -77,8 +75,6 @@ async def startup():
     if settings.kafka_enabled:
         _consumer_tasks.extend([
             asyncio.create_task(consume_product_viewed(), name="consumer-product_viewed"),
-            asyncio.create_task(consume_cart_added(), name="consumer-cart_added"),
-            asyncio.create_task(consume_order_completed(), name="consumer-order_completed"),
             asyncio.create_task(consume_product_catalog(), name="consumer-product_catalog"),
         ])
         logger.info("Consumers Kafka démarrés (%d topics).", len(_consumer_tasks))

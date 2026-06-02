@@ -10,6 +10,7 @@ POST /api/admin/*  → endpoints protégés par X-Admin-Key
 """
 import httpx
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from db import get_mongo_db
 
 from cache import (
     get_cached,
@@ -58,6 +59,21 @@ async def popular_products(
     """Top produits sur fenêtre glissante, segmentés par catégorie si fournie."""
     results = await get_popular(category_id=category_id, limit=limit)
     return {"categoryId": category_id, "popular": results}
+
+
+@router.get("/history/{user_id}")
+async def interaction_history(
+    user_id: str,
+    limit: int = Query(default=20, ge=1, le=100),
+):
+    """Retourne les dernières interactions de l'utilisateur (produits vus)."""
+    db = get_mongo_db()
+    cursor = db["interactions"].find(
+        {"user_id": user_id},
+        {"_id": 0, "product_id": 1, "event_type": 1, "timestamp": 1, "sub_category_id": 1},
+    ).sort("created_at", -1).limit(limit)
+    docs = await cursor.to_list(length=limit)
+    return {"userId": user_id, "count": len(docs), "interactions": docs}
 
 
 @router.get("/personalized/{user_id}")
@@ -127,7 +143,8 @@ async def hybrid(
     if interaction_count >= settings.cold_start_threshold:
         raw_collab = await collaborative.recommend(user_id, limit=limit * 2)
         if raw_collab:
-            max_c = max(item["score"] for item in raw_collab) or 1.0
+            max_c = max(item["score"] for item in raw_collab)
+            max_c = max_c if max_c > 0 else 1.0
             for item in raw_collab:
                 collab_scores[item["productId"]] = item["score"] / max_c
 
@@ -138,7 +155,7 @@ async def hybrid(
         from db import get_qdrant
         from models.embedder import _to_qdrant_id
         import asyncio as _asyncio
-        loop = _asyncio.get_event_loop()
+        loop = _asyncio.get_running_loop()
         pts = await loop.run_in_executor(
             None,
             lambda: get_qdrant().retrieve(
@@ -156,11 +173,11 @@ async def hybrid(
     def _merge_popular(cat_list, global_list, cat_weight=0.6):
         merged: dict[str, float] = {}
         if global_list:
-            g_max = global_list[0]["score"] or 1.0
+            g_max = global_list[0]["score"] if global_list[0]["score"] > 0 else 1.0
             for item in global_list:
                 merged[item["productId"]] = (1 - cat_weight) * item["score"] / g_max
         if cat_list:
-            c_max = cat_list[0]["score"] or 1.0
+            c_max = cat_list[0]["score"] if cat_list[0]["score"] > 0 else 1.0
             for item in cat_list:
                 pid = item["productId"]
                 merged[pid] = merged.get(pid, 0.0) + cat_weight * item["score"] / c_max

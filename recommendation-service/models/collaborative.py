@@ -21,8 +21,6 @@ logger = logging.getLogger(__name__)
 
 INTERACTION_WEIGHTS = {
     "product_viewed": 1,
-    "cart_added": 3,
-    "order_completed": 5,
 }
 
 # ---- État global du modèle ----
@@ -71,14 +69,17 @@ async def train():
         data.append(float(weight))
 
     if len(data) < 10:
-        logger.info("Pas assez d'interactions pour entraîner le modèle (%d).", len(data))
-        return
+        logger.info(
+            "Pas assez d'interactions pour entraîner le modèle (%d) — modèle précédent conservé.",
+            len(data),
+        )
+        return  # on garde _model / _item_factors existants intacts
 
     n_users = len(user_map)
     n_products = len(product_map)
     matrix = sp.coo_matrix((data, (rows, cols)), shape=(n_users, n_products)).tocsr()
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     new_model, user_factors, item_factors = await loop.run_in_executor(None, _sync_fit, matrix)
 
     async with _train_lock:
@@ -107,8 +108,8 @@ async def recommend(user_id: str, limit: int = 10, explore_ratio: float = 0.2) -
             return []
 
         u_idx = _user_index[user_id]
-        user_vec = _user_factors[u_idx]
-        item_factors_snap = _item_factors.copy()
+        user_vec = _user_factors[u_idx].copy()  # seul le vecteur user est copié (petit)
+        item_factors_snap = _item_factors       # référence — training remplace l'objet entier, jamais mutate
         product_ids_snap = list(_product_ids)
 
     n_exploit = max(1, int(limit * (1 - explore_ratio)))
@@ -116,10 +117,15 @@ async def recommend(user_id: str, limit: int = 10, explore_ratio: float = 0.2) -
 
     def _compute_scores():
         scores = item_factors_snap @ user_vec
-        top_indices = np.argsort(scores)[::-1][:n_exploit]
+        # argpartition O(n) vs argsort O(n log n) — seul le top n_exploit est nécessaire
+        if n_exploit < len(scores):
+            part = np.argpartition(scores, -n_exploit)[-n_exploit:]
+            top_indices = part[np.argsort(scores[part])[::-1]]
+        else:
+            top_indices = np.argsort(scores)[::-1]
         return [(int(i), float(scores[i])) for i in top_indices]
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     top = await loop.run_in_executor(None, _compute_scores)
 
     results = []

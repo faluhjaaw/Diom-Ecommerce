@@ -11,5 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class OtpCheck {
     private boolean valid;
-    private String email;
+    private String telephone;
 }

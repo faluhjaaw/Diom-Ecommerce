@@ -91,10 +91,12 @@ async def compute_popularity_scores(window_days: int = 30):
         if not product_id:
             continue
 
-        scores[product_id] = scores.get(product_id, 0.0) + score
+        # max() au lieu de sum() : évite de gonfler le score si le produit
+        # apparaît dans plusieurs catégories du pipeline
+        scores[product_id] = max(scores.get(product_id, 0.0), score)
         category_scores.setdefault(sub_category, {})
-        category_scores[sub_category][product_id] = (
-            category_scores[sub_category].get(product_id, 0.0) + score
+        category_scores[sub_category][product_id] = max(
+            category_scores[sub_category].get(product_id, 0.0), score
         )
 
     # Top-100 global → Redis (TTL calé sur le scheduler 1h)

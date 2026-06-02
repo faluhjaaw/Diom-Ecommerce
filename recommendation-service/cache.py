@@ -59,7 +59,8 @@ async def invalidate_user(user_id: str):
     deleted = 0
     try:
         for pattern in patterns:
-            async for key in redis.scan_iter(pattern):
+            # count=100 : limite les clés renvoyées par batch pour éviter de bloquer Redis
+            async for key in redis.scan_iter(pattern, count=100):
                 await redis.delete(key)
                 deleted += 1
         if deleted:

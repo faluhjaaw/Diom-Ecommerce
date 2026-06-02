@@ -28,14 +28,14 @@ public class AuthController {
     }
 
     @PostMapping("/register1")
-    public ResponseEntity<?> register(@RequestParam String email) {
-        authService.initRegister(email);
+    public ResponseEntity<?> register(@RequestParam String telephone) {
+        authService.initRegister(telephone);
         return ResponseEntity.ok("OTP envoyé");
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<?> verifyMail(@RequestBody MailCheckDTO request) {
-        boolean valid = authService.checkMail(request);
+    public ResponseEntity<?> verifyPhone(@RequestBody PhoneCheckDTO request) {
+        boolean valid = authService.checkPhone(request);
         return valid ? ResponseEntity.ok("Vérification Réussie") : ResponseEntity.status(403).body("OTP invalide");
     }
 
@@ -45,18 +45,16 @@ public class AuthController {
         return valid ? ResponseEntity.ok("Inscription Réussie") : ResponseEntity.status(403).body("Infos invalides");
     }
 
-
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDTO loginDTO) {
         boolean login = authService.loginUser(loginDTO);
-        if(login){
+        if (login) {
             String token = tokenService.generateToken(loginDTO);
             return ResponseEntity.ok(Map.of("token", token));
         }
-        return ResponseEntity.status(403).body("Utilisateur inconnue");
+        return ResponseEntity.status(403).body("Utilisateur inconnu");
     }
 
-    // Création directe d'un utilisateur par un admin (bypass OTP)
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/register")
     public ResponseEntity<?> adminCreateUser(@RequestBody RegisterDTO request) {
@@ -69,14 +67,10 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@RequestBody Map<String, String> request) {
         String token = request.get("token");
-
         if (token == null || token.isBlank()) {
             return ResponseEntity.badRequest().body("Token manquant");
         }
-
         tokenBlacklist.add(token);
-
         return ResponseEntity.ok("Déconnexion réussie");
     }
-
 }

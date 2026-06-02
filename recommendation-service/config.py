@@ -1,4 +1,8 @@
+import logging
+
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -23,7 +27,7 @@ class Settings(BaseSettings):
     # Kafka
     kafka_bootstrap_servers: str = "localhost:9092"
     kafka_group_id: str = "recommendation-service-group"
-    kafka_enabled: bool = True
+    kafka_enabled: bool = False
 
     # Product service (pour l'indexation initiale)
     product_service_url: str = "http://localhost:8082"
@@ -61,3 +65,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if settings.admin_api_key == "change-me-in-production":
+    logger.warning(
+        "ADMIN_API_KEY utilise la valeur par défaut — définir ADMIN_API_KEY en production !"
+    )

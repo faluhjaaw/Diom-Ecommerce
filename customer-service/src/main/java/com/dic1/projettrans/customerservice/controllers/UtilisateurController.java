@@ -1,6 +1,7 @@
 package com.dic1.projettrans.customerservice.controllers;
 
 import com.dic1.projettrans.customerservice.entities.Role;
+import com.dic1.projettrans.customerservice.entities.SellerType;
 import com.dic1.projettrans.customerservice.entities.Utilisateur;
 import com.dic1.projettrans.customerservice.repositories.UtilisateurRepository;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,13 @@ public class UtilisateurController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/telephone/{telephone:.+}")
+    public ResponseEntity<Utilisateur> findByTelephone(@PathVariable String telephone) {
+        return utilisateurRepository.findByTelephoneAndActiveTrue(telephone)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/id/{id}")
     public ResponseEntity<Utilisateur> update(@PathVariable Long id, @RequestBody Utilisateur incoming) {
         return utilisateurRepository.findByIdAndActiveTrue(id)
@@ -84,6 +92,17 @@ public class UtilisateurController {
         return utilisateurRepository.findById(id)
                 .map(user -> {
                     user.setActive(true);
+                    return ResponseEntity.ok(utilisateurRepository.save(user));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // Upgrade vers SHOP_OWNER (appelé lors de l'onboarding boutique)
+    @PatchMapping("/{id}/upgrade-to-shop")
+    public ResponseEntity<Utilisateur> upgradeToShop(@PathVariable Long id) {
+        return utilisateurRepository.findByIdAndActiveTrue(id)
+                .map(user -> {
+                    user.setSellerType(SellerType.SHOP_OWNER);
                     return ResponseEntity.ok(utilisateurRepository.save(user));
                 })
                 .orElse(ResponseEntity.notFound().build());

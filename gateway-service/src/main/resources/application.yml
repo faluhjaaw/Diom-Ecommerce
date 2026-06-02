@@ -47,6 +47,13 @@ spring:
           filters:
             - RewritePath=/customer-service/(?<segment>.*), /$\{segment}
 
+        - id: product-service-shops
+          uri: lb://product-service
+          predicates:
+            - Path=/product-service/api/shops/**
+          filters:
+            - RewritePath=/product-service/(?<segment>.*), /$\{segment}
+
         - id: product-service-api
           uri: lb://product-service
           predicates:

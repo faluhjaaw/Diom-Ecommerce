@@ -1,7 +1,5 @@
 package com.dic1.projettrans.authentication.feign;
 
-import com.dic1.projettrans.authentication.dto.MailCheckDTO;
-import com.dic1.projettrans.authentication.dto.OtpGenerateDTO;
 import com.dic1.projettrans.authentication.dto.Utilisateur;
 import com.dic1.projettrans.authentication.model.CustomerUser;
 import com.dic1.projettrans.authentication.model.CredentialRequest;
@@ -22,14 +20,17 @@ public interface CustomerServiceRestClient {
     @GetMapping("/api/users/email/{email}")
     CustomerUser findUserByEmail(@PathVariable String email);
 
+    @GetMapping("/api/users/telephone/{telephone}")
+    CustomerUser findUserByTelephone(@PathVariable String telephone);
+
     @PostMapping("/api/users/verify-credentials")
     ResponseEntity<Map<String, Object>> verifyCredentials(@RequestBody CredentialRequest request);
 
     @PostMapping("/api/users/otp/generate")
-    Otp generateOTP(@RequestParam String email);
+    Otp generateOTP(@RequestParam String telephone);
 
     @PostMapping("/api/users/otp/verify")
-    OtpCheck verifyOTP(@RequestParam String email, @RequestParam String code);
+    OtpCheck verifyOTP(@RequestParam String telephone, @RequestParam String code);
 
     @PostMapping("/api/users")
     Utilisateur inscription(@RequestBody Utilisateur user);

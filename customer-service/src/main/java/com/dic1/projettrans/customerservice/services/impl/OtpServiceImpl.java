@@ -25,22 +25,21 @@ public class OtpServiceImpl implements OtpService {
 
     @Override
     @Transactional
-    public String generate(String email) {
-        Objects.requireNonNull(email, "email ne doit pas être null");
-        String normalized = normalize(email);
-        // Optionally remove previous OTPs for this email to keep only the latest
-        if(otpRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(normalized).isPresent()){
-            otpRepository.deleteByEmail(normalized);
+    public String generate(String telephone) {
+        Objects.requireNonNull(telephone, "telephone ne doit pas être null");
+        String normalized = normalize(telephone);
+        if (otpRepository.findTopByTelephoneAndUsedFalseOrderByCreatedAtDesc(normalized).isPresent()) {
+            otpRepository.deleteByTelephone(normalized);
         }
 
         String code = String.format("%06d", random.nextInt(1_000_000));
 
         LocalDateTime now = LocalDateTime.now();
         Otp otp = new Otp();
-        otp.setEmail(normalized);
+        otp.setTelephone(normalized);
         otp.setCode(code);
         otp.setCreatedAt(now);
-        otp.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        otp.setExpiresAt(now.plusMinutes(5));
         otp.setUsed(false);
         otpRepository.save(otp);
         return code;
@@ -48,14 +47,13 @@ public class OtpServiceImpl implements OtpService {
 
     @Override
     @Transactional
-    public boolean verify(String email, String code) {
-        if (email == null || code == null) return false;
-        String normalized = normalize(email);
-        return otpRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(normalized)
+    public boolean verify(String telephone, String code) {
+        if (telephone == null || code == null) return false;
+        String normalized = normalize(telephone);
+        return otpRepository.findTopByTelephoneAndUsedFalseOrderByCreatedAtDesc(normalized)
                 .map(otp -> {
                     if (LocalDateTime.now().isAfter(otp.getExpiresAt())) {
-                        // Expired: clean up and refuse
-                        otpRepository.deleteByEmail(normalized);
+                        otpRepository.deleteByTelephone(normalized);
                         return false;
                     }
                     boolean match = otp.getCode().equals(code);
@@ -68,7 +66,7 @@ public class OtpServiceImpl implements OtpService {
                 .orElse(false);
     }
 
-    private String normalize(String email) {
-        return email.trim().toLowerCase();
+    private String normalize(String telephone) {
+        return telephone.trim();
     }
 }

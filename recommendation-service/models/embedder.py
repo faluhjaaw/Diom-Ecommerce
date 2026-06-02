@@ -8,6 +8,7 @@ bloquer la boucle asyncio.
 """
 import asyncio
 import logging
+import re
 import uuid
 from typing import Any
 
@@ -34,7 +35,6 @@ def load_model():
 def _build_text(product: dict) -> str:
     # Brand stripped from name and tags — shared brand across unrelated categories
     # (Samsung phone vs Samsung fridge) would inflate cosine similarity.
-    import re
     brand = product.get("brand", "")
     brand_pattern = re.compile(re.escape(brand), re.IGNORECASE) if brand else None
 
@@ -140,15 +140,13 @@ def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> l
     qdrant_source_id = _to_qdrant_id(product_id)
     scored = []
     for hit in candidates:
-        if str(hit.id) == qdrant_source_id:
+        if str(hit.id) == qdrant_source_id:  # exclure le produit source lui-même
             continue
 
         payload = hit.payload
         cosine = hit.score
 
         # Category boost/penalty (soft)
-        # Penalty applies whenever source has a category and hit doesn't match
-        # (including hits with no subCategoryId at all)
         hit_sub_cat = payload.get("subCategoryId")
         same_cat = source_sub_cat and hit_sub_cat == source_sub_cat
         if same_cat:
@@ -158,9 +156,13 @@ def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> l
         else:
             category_boost = 1.0
 
-        # Rating boost
+        # Rating boost — clamp sur 0-10 pour gérer toutes les échelles
         rating = payload.get("rating")
-        rating_boost = (1.0 + float(rating) / 10.0) if rating else 1.0
+        if rating is not None:
+            rating_clamped = max(0.0, min(10.0, float(rating)))
+            rating_boost = 1.0 + rating_clamped / 10.0
+        else:
+            rating_boost = 1.0
 
         # Price penalty (soft — pas d'élimination)
         hit_price = payload.get("price", 0)
@@ -172,10 +174,6 @@ def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> l
 
         final_score = cosine * category_boost * rating_boost * price_penalty
         orig_id = payload.get("productId", str(hit.id))
-        logger.debug(
-            "SCORE pid=%s name=%s subCat=%s cosine=%.4f cat_boost=%.1f final=%.4f",
-            orig_id, payload.get("name"), hit_sub_cat, cosine, category_boost, final_score,
-        )
         scored.append({"productId": orig_id, "score": round(final_score, 4), **payload})
 
     scored.sort(key=lambda x: x["score"], reverse=True)
@@ -188,7 +186,7 @@ def _sync_find_similar(product_id: str, limit: int, price_range_pct: float) -> l
 
 async def embed_and_index_product_async(product: dict):
     """Async-safe : encode + upsert dans Qdrant sans bloquer la boucle."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     await loop.run_in_executor(None, _sync_embed_and_index, product)
 
 
@@ -198,7 +196,7 @@ async def find_similar_async(
     price_range_pct: float = 0.2,
 ) -> list[dict[str, Any]]:
     """Async-safe : recherche cosine dans Qdrant sans bloquer la boucle."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None, _sync_find_similar, product_id, limit, price_range_pct
     )
@@ -224,24 +222,25 @@ async def index_all_products():
         logger.info("Aucun produit à indexer.")
         return
 
-    # Fetch détail de chaque produit pour avoir subCategoryId, tags, brand, etc.
-    products = []
-    async with httpx.AsyncClient(timeout=10) as client:
-        for item in product_list:
-            pid = item.get("id")
-            if not pid:
-                continue
+    # Fetch détail de chaque produit en parallèle (semaphore = 10 workers max)
+    sem = asyncio.Semaphore(10)
+
+    async def _fetch_one(client: httpx.AsyncClient, item: dict) -> dict:
+        pid = item.get("id")
+        if not pid:
+            return item
+        async with sem:
             try:
                 r = await client.get(f"{settings.product_service_url}/api/products/{pid}")
-                if r.status_code == 200:
-                    products.append(r.json())
-                else:
-                    products.append(item)  # fallback sur données partielles
+                return r.json() if r.status_code == 200 else item
             except Exception as exc:
                 logger.warning("Détail produit %s inaccessible : %s", pid, exc)
-                products.append(item)
+                return item
 
-    loop = asyncio.get_event_loop()
+    async with httpx.AsyncClient(timeout=10) as client:
+        products = await asyncio.gather(*[_fetch_one(client, item) for item in product_list])
+
+    loop = asyncio.get_running_loop()
     batch_size = 64
     total = 0
 
