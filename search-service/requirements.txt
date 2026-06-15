@@ -25,3 +25,4 @@ httpx==0.27.2
 
 # Eureka
 py-eureka-client==0.11.12
+python-multipart

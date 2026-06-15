@@ -3,6 +3,7 @@ import logging
 from fastapi import APIRouter, BackgroundTasks
 from app.services.mongo_service import get_all_products
 from app.services.embedding_service import embed_batch_async, build_product_text
+from qdrant_client.models import Distance, VectorParams
 from app.services.qdrant_service import upsert_product, client
 from app.config import settings
 
@@ -13,6 +14,18 @@ BATCH_SIZE = 64
 
 
 async def index_all_task():
+    # Purge et recréation de la collection pour éviter les doublons
+    try:
+        await client.delete_collection(collection_name=settings.QDRANT_COLLECTION)
+        logger.info("Collection '%s' supprimée.", settings.QDRANT_COLLECTION)
+    except Exception:
+        pass
+    await client.create_collection(
+        collection_name=settings.QDRANT_COLLECTION,
+        vectors_config=VectorParams(size=settings.EMBEDDING_DIM, distance=Distance.COSINE),
+    )
+    logger.info("Collection '%s' recréée.", settings.QDRANT_COLLECTION)
+
     products = await get_all_products()
     logger.info("Indexation de %d produits...", len(products))
     count = 0

@@ -243,6 +243,9 @@ services:
       eureka_enabled: "true"
       eureka_server: http://discovery-service:8761/eureka
       eureka_instance_host: search-service
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    volumes:
+      - /Users/simply_ablaye/.cache/huggingface:/root/.cache/huggingface
 
   recommendation-service:
     build: ./recommendation-service

@@ -12,7 +12,7 @@ import py_eureka_client.eureka_client as eureka_client
 from fastapi import FastAPI
 from app.config import settings
 from seed_redis import seed_redis
-from app.routers import search, indexer
+from app.routers import search, indexer, ai_chat
 from app.services.embedding_service import load_model
 from app.services.mongo_service import connect_mongo, close_mongo
 from app.services.autocomplete_service import connect_redis, close_redis
@@ -94,6 +94,8 @@ app = FastAPI(
 
 app.include_router(search.router, prefix="/api/search", tags=["Search"])
 app.include_router(indexer.router, prefix="/api/indexer", tags=["Indexer"])
+app.include_router(ai_chat.router, prefix="/api/ai", tags=["AI"])
+
 
 
 @app.get("/health")

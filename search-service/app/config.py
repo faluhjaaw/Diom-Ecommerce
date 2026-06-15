@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     eureka_enabled: bool = True
     eureka_instance_host: str = "localhost"
 
+    # IA
+    ANTHROPIC_API_KEY: str = ""
+
     class Config:
         env_file = ".env"
 

@@ -24,7 +24,6 @@ public class ShopController {
     private final ShopService shopService;
 
     /** Créer une boutique — ownerId = email JWT */
-    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<ShopResponse> createShop(
             @Valid @RequestBody ShopCreateRequest request,
@@ -51,7 +50,6 @@ public class ShopController {
     }
 
     /** Modifier logo/banner/description — authentifié */
-    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{shopId}")
     public ResponseEntity<ShopResponse> updateShop(
             @PathVariable String shopId,
@@ -61,7 +59,6 @@ public class ShopController {
     }
 
     /** Dashboard stats — authentifié + ownership check dans le service */
-    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{shopId}/stats")
     public ResponseEntity<Shop.ShopStats> getStats(
             @PathVariable String shopId,

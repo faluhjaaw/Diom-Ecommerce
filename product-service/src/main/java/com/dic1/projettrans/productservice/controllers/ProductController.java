@@ -175,6 +175,22 @@ public class ProductController {
         return ResponseEntity.ok(productService.getStats());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/assign")
+    public ResponseEntity<ProductDTO> createAndAssign(
+            @Valid @RequestBody CreateProductDTO dto,
+            @RequestParam String sellerEmail,
+            Authentication authentication) {
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) {
+            return ResponseEntity.status(403).build();
+        }
+        ProductDTO created = productService.create(dto, sellerEmail);
+        productEventProducer.publishProductCreated(toCatalogEvent("created", created));
+        return ResponseEntity.created(URI.create("/api/products/" + created.getId())).body(created);
+    }
+
     private ProductCatalogEvent toCatalogEvent(String eventType, ProductDTO p) {
         return ProductCatalogEvent.builder()
                 .eventType(eventType)
