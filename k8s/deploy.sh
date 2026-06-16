@@ -16,27 +16,29 @@ echo "==> Project: $PROJECT_ID"
 echo "==> Registry: $REGISTRY"
 echo "==> Gateway IP: $GATEWAY_IP"
 
-# ── 1. Configure Docker auth ──────────────────────────────────────────────────
-echo "==> Configuring Docker for Artifact Registry..."
-gcloud auth configure-docker ${REGION}-docker.pkg.dev --quiet
-
-# ── 2. Build & Push backend services ─────────────────────────────────────────
+# ── 1. Build & Push backend services via Cloud Build ─────────────────────────
 SERVICES=(auth-service product-service customer-service gateway-service discovery-service avis-service message-service recommendation-service search-service)
 
 for SERVICE in "${SERVICES[@]}"; do
-  echo "==> Building $SERVICE..."
-  docker build -t "${REGISTRY}/${SERVICE}:latest" "${BACKEND_DIR}/${SERVICE}"
-  echo "==> Pushing $SERVICE..."
-  docker push "${REGISTRY}/${SERVICE}:latest"
+  echo "==> Cloud Build: $SERVICE..."
+  gcloud builds submit \
+    --tag "${REGISTRY}/${SERVICE}:latest" \
+    "${BACKEND_DIR}/${SERVICE}" \
+    --project="${PROJECT_ID}"
 done
 
-# ── 3. Build & Push frontend ──────────────────────────────────────────────────
-echo "==> Building frontend with VITE_API_URL=http://${GATEWAY_IP}..."
-docker build \
-  --build-arg VITE_API_URL="http://${GATEWAY_IP}" \
-  -t "${REGISTRY}/frontend:latest" \
-  "${FRONTEND_DIR}"
-docker push "${REGISTRY}/frontend:latest"
+# ── 2. Build & Push frontend via Cloud Build ──────────────────────────────────
+echo "==> Cloud Build: frontend with VITE_API_URL=http://${GATEWAY_IP}..."
+gcloud builds submit \
+  --config /dev/stdin \
+  "${FRONTEND_DIR}" \
+  --project="${PROJECT_ID}" << EOF
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '--build-arg', 'VITE_API_URL=http://${GATEWAY_IP}', '-t', '${REGISTRY}/frontend:latest', '.']
+images:
+- '${REGISTRY}/frontend:latest'
+EOF
 
 # ── 4. Replace PROJECT_ID in manifests ───────────────────────────────────────
 echo "==> Patching manifests with PROJECT_ID=${PROJECT_ID}..."
