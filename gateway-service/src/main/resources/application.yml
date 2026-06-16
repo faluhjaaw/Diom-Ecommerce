@@ -8,6 +8,7 @@ spring:
           '[/**]':
             allowedOrigins:
               - "http://localhost:5173"
+              - "${FRONTEND_URL:http://localhost:5173}"
             allowedMethods:
               - GET
               - POST
@@ -83,21 +84,21 @@ spring:
             - RewritePath=/avis-service/(?<segment>.*), /$\{segment}
 
         - id: search-service-api
-          uri: http://proj-search:8088
+          uri: ${SEARCH_SERVICE_URL:http://search-service:8088}
           predicates:
             - Path=/search-service/api/**
           filters:
             - RewritePath=/search-service/(?<segment>.*), /$\{segment}
 
         - id: search-service-swagger
-          uri: http://proj-search:8088
+          uri: ${SEARCH_SERVICE_URL:http://search-service:8088}
           predicates:
             - Path=/search-service/v3/api-docs, /search-service/swagger-ui/**, /search-service/swagger-ui.html
           filters:
             - RewritePath=/search-service/(?<segment>.*), /$\{segment}
 
         - id: recommendation-service-api
-          uri: http://proj-recommendation:8090
+          uri: ${RECOMMENDATION_SERVICE_URL:http://recommendation-service:8090}
           predicates:
             - Path=/recommendation-service/api/**
           filters:

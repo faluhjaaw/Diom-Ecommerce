@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: message-service
+  namespace: diom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: message-service
+  template:
+    metadata:
+      labels:
+        app: message-service
+    spec:
+      containers:
+        - name: message-service
+          image: us-central1-docker.pkg.dev/PROJECT_ID/diom-repo/message-service:latest
+          ports:
+            - containerPort: 8087
+          env:
+            - name: PORT
+              value: "8087"
+            - name: MONGODB_URI
+              value: "mongodb://mongodb:27017/transversaleMessages"
+            - name: EUREKA_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: EUREKA_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: diom-secrets
+                  key: jwt-secret
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8087
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8087
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: message-service
+  namespace: diom
+spec:
+  selector:
+    app: message-service
+  ports:
+    - port: 8087
+      targetPort: 8087

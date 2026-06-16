@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service
+  namespace: diom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: search-service
+  template:
+    metadata:
+      labels:
+        app: search-service
+    spec:
+      containers:
+        - name: search-service
+          image: us-central1-docker.pkg.dev/PROJECT_ID/diom-repo/search-service:latest
+          ports:
+            - containerPort: 8088
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: MONGODB_URI
+            - name: MONGODB_DB
+              value: "transversaleProducts"
+            - name: QDRANT_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: QDRANT_HOST
+            - name: QDRANT_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: QDRANT_PORT
+            - name: redis_host
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: REDIS_HOST
+            - name: redis_port
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: REDIS_PORT
+            - name: kafka_bootstrap_servers
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: kafka_enabled
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: KAFKA_ENABLED
+            - name: eureka_enabled
+              value: "true"
+            - name: eureka_server
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: EUREKA_SERVER
+            - name: eureka_instance_host
+              value: "search-service"
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: diom-secrets
+                  key: anthropic-api-key
+            - name: OLLAMA_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: OLLAMA_BASE_URL
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "500m"
+            limits:
+              memory: "3Gi"
+              cpu: "2000m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8088
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service
+  namespace: diom
+spec:
+  selector:
+    app: search-service
+  ports:
+    - port: 8088
+      targetPort: 8088

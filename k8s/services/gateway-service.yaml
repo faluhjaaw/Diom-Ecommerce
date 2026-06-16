@@ -1,0 +1,76 @@
+# Deploy LAST among backend services — needs all other services registered in Eureka
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-service
+  namespace: diom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway-service
+  template:
+    metadata:
+      labels:
+        app: gateway-service
+    spec:
+      containers:
+        - name: gateway-service
+          image: us-central1-docker.pkg.dev/PROJECT_ID/diom-repo/gateway-service:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: PORT
+              value: "8080"
+            - name: EUREKA_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: EUREKA_URI
+            - name: SEARCH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: SEARCH_SERVICE_URL
+            - name: RECOMMENDATION_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: RECOMMENDATION_SERVICE_URL
+            - name: FRONTEND_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: diom-config
+                  key: FRONTEND_URL
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: diom
+spec:
+  selector:
+    app: gateway-service
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
