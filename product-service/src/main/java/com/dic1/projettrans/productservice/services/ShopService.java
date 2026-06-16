@@ -5,6 +5,7 @@ import com.dic1.projettrans.productservice.dto.ShopCreateRequest;
 import com.dic1.projettrans.productservice.dto.ShopResponse;
 import com.dic1.projettrans.productservice.dto.ShopUpdateRequest;
 import com.dic1.projettrans.productservice.entities.Shop;
+import com.dic1.projettrans.productservice.entities.ShopPlan;
 import org.springframework.data.domain.Page;
 
 public interface ShopService {
@@ -14,4 +15,6 @@ public interface ShopService {
     ShopResponse updateShop(String shopId, String ownerId, ShopUpdateRequest request);
     Shop.ShopStats getStats(String shopId, String ownerId);
     void incrementProductCount(String shopId);
+    ShopResponse getMyShop(String ownerId);
+    ShopResponse upgradePlan(String ownerId, ShopPlan plan);
 }

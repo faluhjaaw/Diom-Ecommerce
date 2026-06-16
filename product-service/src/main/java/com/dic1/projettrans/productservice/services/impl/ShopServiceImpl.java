@@ -106,6 +106,24 @@ public class ShopServiceImpl implements ShopService {
         });
     }
 
+    @Override
+    public ShopResponse getMyShop(String ownerId) {
+        return shopRepository.findByOwnerId(ownerId)
+                .map(ShopResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Aucune boutique pour cet utilisateur"));
+    }
+
+    @Override
+    public ShopResponse upgradePlan(String ownerId, ShopPlan plan) {
+        Shop shop = shopRepository.findByOwnerId(ownerId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Aucune boutique pour cet utilisateur"));
+
+        shop.setPlan(plan);
+        return ShopResponse.from(shopRepository.save(shop));
+    }
+
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private String slugify(String input) {

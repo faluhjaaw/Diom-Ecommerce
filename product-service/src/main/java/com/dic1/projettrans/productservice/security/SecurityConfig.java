@@ -30,6 +30,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // /error doit rester public : sinon le forward interne Spring Boot
+                        // après une exception (404, 403 métier, etc.) est lui-même bloqué par
+                        // anyRequest().authenticated(), et le client reçoit un 403 à la place
+                        // du vrai statut.
+                        .requestMatchers("/error").permitAll()
                         // Routes publiques (lecture)
                         .requestMatchers("/api/products/admin/**").permitAll()
                         .requestMatchers("/api/products", "/api/products/**").permitAll()

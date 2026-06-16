@@ -21,18 +21,32 @@ async def verify_image(request: dict):
                     "messages": [
                         {
                             "role": "user",
-                            "content": f"Cette image montre-t-elle un(e) {product_name} ? Réponds uniquement par OUI ou NON suivi d'une courte raison en français.",
-                            "images": [image_base64],
+                            "content": f"""Tu es un modérateur pour une marketplace. Analyse cette image.
+
+Le vendeur déclare vendre : "{product_name}"
+
+Réponds REFUSE si :
+- L'image ne montre PAS un objet/produit physique
+- L'image montre une personne, un paysage, ou du texte uniquement
+- L'image est floue ou illisible
+- L'objet visible est COMPLETEMENT différent de "{product_name}" (ex: une voiture pour un téléphone)
+
+Réponds APPROUVE si :
+- L'image montre un produit physique lié à "{product_name}" ou de la même catégorie
+- L'image est claire et de bonne qualité
+
+Commence par APPROUVE ou REFUSE puis une courte explication.""",
+                            "images": [image_base64]
                         }
                     ],
-                    "stream": False,
+                    "stream": False
                 },
-                timeout=30.0,
+                timeout=60.0,
             )
             data = response.json()
-            answer = data.get("message", {}).get("content", "").upper()
-            approved = answer.startswith("OUI")
-            reason = data.get("message", {}).get("content", "")
+            answer = data.get("message", {}).get("content", "")
+            approved = not answer.upper().startswith("REFUSE")
+            reason = answer.replace("APPROUVE", "").replace("REFUSE", "").strip(" :-\n")
             return {"approved": approved, "reason": reason}
     except Exception as e:
-        return {"approved": True, "reason": f"Vérification IA indisponible: {str(e)}"}
+        return {"approved": True, "reason": f"Vérification IA indisponible"}

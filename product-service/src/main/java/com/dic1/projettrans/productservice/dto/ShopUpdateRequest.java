@@ -8,3 +8,4 @@ public class ShopUpdateRequest {
     private String bannerUrl;
     private String description;
 }
+

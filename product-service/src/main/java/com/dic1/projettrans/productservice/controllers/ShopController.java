@@ -2,6 +2,7 @@ package com.dic1.projettrans.productservice.controllers;
 
 import com.dic1.projettrans.productservice.dto.ProductAllDTO;
 import com.dic1.projettrans.productservice.dto.ShopCreateRequest;
+import com.dic1.projettrans.productservice.dto.ShopPlanUpdateRequest;
 import com.dic1.projettrans.productservice.dto.ShopResponse;
 import com.dic1.projettrans.productservice.dto.ShopUpdateRequest;
 import com.dic1.projettrans.productservice.entities.Shop;
@@ -32,6 +33,22 @@ public class ShopController {
         return ResponseEntity
                 .created(URI.create("/api/shops/" + created.getSlug()))
                 .body(created);
+    }
+
+    /** Boutique de l'utilisateur connecté */
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ShopResponse> getMyShop(Authentication authentication) {
+        return ResponseEntity.ok(shopService.getMyShop(authentication.getName()));
+    }
+
+    /** Changer le plan de la boutique de l'utilisateur connecté (upgrade/downgrade) */
+    @PatchMapping("/me/plan")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ShopResponse> upgradePlan(
+            @Valid @RequestBody ShopPlanUpdateRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(shopService.upgradePlan(authentication.getName(), request.getPlan()));
     }
 
     /** Vitrine publique par slug */

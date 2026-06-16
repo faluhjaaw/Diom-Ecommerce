@@ -179,6 +179,7 @@ services:
       EUREKA_URI: http://discovery-service:8761/eureka
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/transversaleProducts
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CUSTOMER_SERVICE_URL: http://customer-service:8083
 
   avis-service:
     build: ./avis-service

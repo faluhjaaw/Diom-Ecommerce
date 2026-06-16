@@ -20,6 +20,7 @@ async def ai_chat(request: dict):
     """Endpoint IA conseils achat — relaie vers Claude API"""
     user_message = request.get("message", "")
     history = request.get("history", [])
+    system_override = request.get("system_override", None)
 
     # Recherche sémantique de produits pertinents
     GREETINGS = {'hello', 'hi', 'bonjour', 'bonsoir', 'salut', 'hey', 'salam', 'coucou', 'yo'}
@@ -27,7 +28,7 @@ async def ai_chat(request: dict):
 
     products = []
     product_context = ""
-    if not is_greeting:
+    if not is_greeting and not system_override:
         try:
             corrected = correct_query(user_message)
             query_vector = await embed_text_async(corrected)
@@ -58,7 +59,7 @@ async def ai_chat(request: dict):
                 "messages": [
                     {
                         "role": "system",
-                        "content": (
+                        "content": system_override if system_override else (
                             "Tu es un assistant shopping pour ShopSen, marketplace sénégalaise. "
                             "Tu réponds UNIQUEMENT en français, max 2-3 phrases courtes. "
                             "Si le message est une salutation (bonjour, hello, hi, etc.), réponds juste par une salutation et demande ce que l'utilisateur cherche. "

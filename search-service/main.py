@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 
 import py_eureka_client.eureka_client as eureka_client
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from seed_redis import seed_redis
 from app.routers import search, indexer, ai_chat, verify_image
@@ -90,6 +91,14 @@ app = FastAPI(
     version="1.0.0",
     description="Recherche sémantique pour la marketplace Diom",
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 app.include_router(search.router, prefix="/api/search", tags=["Search"])
